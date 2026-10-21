@@ -1,0 +1,1059 @@
+{
+  "title": "Home Orangery",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Home Orangery — Module Selection",
+        "description": "Enter an instance name and select the automation modules to enable.",
+        "data": {
+          "instance_name": "Instance name",
+          "modes": "Enabled modules",
+          "enable_logging": "Enable error logging and notifications"
+        },
+        "data_description": {
+          "instance_name": "Name assigned to created devices and entities (for example: “Orangery”, “Loggia”, “Greenhouse”, “Winter Garden”, or “Balcony”).",
+          "enable_logging": "Global mode for writing errors to Logbook, sending push notifications, and announcing errors on speakers."
+        }
+      },
+      "blinds": {
+        "title": "Blind control",
+        "description": "Select the blind drives and additional blind control features.",
+        "data": {
+          "blinds": "Blind drives",
+          "blinds_modes": "Additional blind features",
+          "split_weekend_schedule": "Separate weekday and weekend schedules"
+        },
+        "data_description": {
+          "split_weekend_schedule": "Disable if every day of the week should follow a single unified schedule (without separating workdays and days off)."
+        }
+      },
+      "time": {
+        "title": "Schedule and sun",
+        "description": "Configure automatic sunrise opening, sunset closing, and the work cycle (5/2 workweek by default, 2/2, 3/3 shifts, etc.).",
+        "data": {
+          "open_at_sunrise": "Open at sunrise",
+          "up_time_workday": "But on weekdays no earlier than",
+          "up_time_weekend": "But on weekends no earlier than",
+          "close_at_sunset": "Close at sunset",
+          "down_time": "But no later than",
+          "work_days": "Consecutive workdays",
+          "off_days": "Consecutive days off",
+          "cycle_start_date": "First workday of cycle",
+          "use_holidays": "Use weekend schedule on public holidays",
+          "up_time_daily": "But not earlier than"
+        },
+        "data_description": {
+          "up_time_weekend": "Blinds will open at the specified time if “Open at sunrise” is unchecked.",
+          "down_time": "Blinds will close at the specified time if “Close at sunset” is unchecked.",
+          "cycle_start_date": "For a standard Mon–Fri workweek, leave any Monday; for shift schedules (2/2, 3/3, 1/3), select the first workday of your shift.",
+          "use_holidays": "Automatically accounts for official public holidays and transferred days off based on the country set in Home Assistant."
+        }
+      },
+      "sun_protect": {
+        "title": "Direct sun protection",
+        "description": "Main protection settings.",
+        "data": {
+          "sun_sensor": "Sun sensor",
+          "blinds_for_protect": "Blinds for protection",
+          "sun_protect_extras": "Additional conditions"
+        },
+        "data_description": {
+          "blinds_for_protect": "You can select specific blind drives to use for direct sun protection. If none are selected, all blind drives will be used."
+        }
+      },
+      "sun_protect_angles": {
+        "title": "Direct sun protection",
+        "description": "Configure the protection trigger angles. Blinds will close automatically when the sun enters the specified sectors.",
+        "data": {
+          "sun_azimuth": "Sun azimuth",
+          "sun_elevation": "Sun elevation"
+        },
+        "data_description": {
+          "sun_azimuth": "Angle between north and the direction of the sun.",
+          "sun_elevation": "Angle of the sun above the horizon."
+        }
+      },
+      "weather": {
+        "title": "Weather forecast",
+        "description": "Sun protection will be active only under the selected weather conditions.",
+        "data": {
+          "forecast_sensor": "Weather sensor",
+          "forecasts": "Weather conditions for closing"
+        }
+      },
+      "illuminance": {
+        "title": "Illuminance",
+        "description": "Blind reaction to illuminance level.",
+        "data": {
+          "illuminance_sensor": "Illuminance sensor",
+          "min_illuminance": "Lower threshold",
+          "max_illuminance": "Upper threshold",
+          "illuminance_delay": "Delay for spikes"
+        }
+      },
+      "yandex": {
+        "title": "Voice control",
+        "description": "Configure voice commands (phrases separated by ;) and TTS output method.",
+        "data": {
+          "voice_engine": "Voice assistant / TTS mode",
+          "yandex_intent_open": "Open phrases",
+          "yandex_intent_close": "Close phrases",
+          "yandex_intent_position": "Position query phrases",
+          "yandex_intent_status": "Status query phrases",
+          "yandex_media_player": "Media players / speakers",
+          "tts_entity": "Text-to-Speech (TTS) engine",
+          "voice_event": "Voice command event",
+          "yandex_volume": "Response volume"
+        },
+        "data_description": {
+          "voice_engine": "Defaults to Yandex Station (yandex_intent). Select Home Assistant Assist / TTS for other speakers.",
+          "tts_entity": "Used only for standard Home Assistant TTS (Piper, Google, Silero, etc.). Leave empty for Yandex Station.",
+          "voice_event": "Defaults to yandex_intent. You can specify any custom event on the HA bus."
+        }
+      },
+      "device": {
+        "title": "Control device",
+        "description": "Settings for physical rotary buttons or sliders",
+        "data": {
+          "slider_device": "Device (MQTT / ZHA)",
+          "slider_mode": "Device operating mode",
+          "slider_step": "Position step",
+          "slider_fast_speed": "Fast swipe threshold"
+        },
+        "data_description": {
+          "slider_mode": "Full travel — blinds move to the end. Step — changes by N%. Proportional — mathematically calculates swipe length (for sliders).",
+          "slider_step": "Used for step mode — the main mode for rotary buttons.",
+          "slider_fast_speed": "Sliders only! If gesture speed is above the threshold — blinds move to the limit. Below — proportional/step."
+        }
+      },
+      "device_payloads": {
+        "title": "Device command settings",
+        "description": "Specify the messages your device sends for different actions.",
+        "data": {
+          "basic_topic": "Base MQTT topic",
+          "payload_up": "“Up” message",
+          "payload_down": "“Down” message",
+          "payload_stop": "“Stop” message"
+        }
+      },
+      "limits": {
+        "title": "Travel limits",
+        "description": "Configure upper and lower limits for opening/closing the blinds.",
+        "data": {
+          "up_limit": "Upper travel limit",
+          "down_limit": "Lower travel limit"
+        }
+      },
+      "repeats": {
+        "title": "Retries and timings",
+        "description": "Protection settings against blind drive failures.",
+        "data": {
+          "repeat_for": "Number of retries",
+          "delay_for_repeat": "Delay between retries",
+          "movement_time": "Full travel time"
+        },
+        "data_description": {
+          "repeat_for": "The integration will send the command as many times as specified here.",
+          "delay_for_repeat": "Pause between sending retry commands.",
+          "movement_time": "After this time following the commands, the integration will verify the blind position."
+        }
+      },
+      "logging": {
+        "title": "Error logging and notifications",
+        "description": "Write errors to Logbook, send push notifications, and announce errors on speakers.",
+        "data": {
+          "notify_target": "Push notification recipients",
+          "yandex_media_player": "Media players / speakers for error announcements",
+          "voice_engine": "Speaker TTS mode",
+          "tts_entity": "Text-to-Speech (TTS) engine",
+          "low_battery_threshold": "Low battery warning threshold"
+        },
+        "data_description": {
+          "yandex_media_player": "If speakers are selected, equipment errors and low battery warnings will be announced on them.",
+          "voice_engine": "Defaults to Yandex Station. Select Home Assistant Assist / TTS for other speakers.",
+          "tts_entity": "Used only for standard Home Assistant TTS. Leave empty for Yandex Station.",
+          "low_battery_threshold": "When battery level drops below this threshold, a notification is sent and a warning is created in Repairs."
+        }
+      },
+      "phytolamp": {
+        "title": "Plant lighting",
+        "description": "Select plant grow light entities and settings mode.",
+        "data": {
+          "phytolamp": "Lighting switches / lamps",
+          "phytolamp_use_main_settings": "Use main integration settings",
+          "split_weekend_schedule": "Separate weekday and weekend schedules"
+        },
+        "data_description": {
+          "phytolamp": "Select one or more switch / light entities controlling your grow lights.",
+          "phytolamp_use_main_settings": "When enabled, lighting uses the main integration schedule. Uncheck to configure custom schedule and conditions for plant lighting.",
+          "split_weekend_schedule": "Disable if every day of the week should follow a single unified schedule (without separating workdays and days off)."
+        }
+      },
+      "phytolamp_settings": {
+        "title": "Custom plant lighting settings",
+        "description": "Configure additional conditions and custom schedule for plant lighting.",
+        "data": {
+          "sun_sensor": "Sun sensor",
+          "phytolamp_extras": "Additional conditions",
+          "phytolamp_on_time_workday": "Turn on lighting on weekdays at",
+          "phytolamp_on_time_weekend": "Turn on lighting on weekends at",
+          "phytolamp_off_time": "Turn off lighting at",
+          "work_days": "Consecutive workdays",
+          "off_days": "Consecutive days off",
+          "cycle_start_date": "First workday of cycle",
+          "use_holidays": "Use weekend schedule on public holidays",
+          "phytolamp_on_time_daily": "Turn on lighting at"
+        },
+        "data_description": {
+          "phytolamp_extras": "Select parameters to configure separately for plant lighting.",
+          "cycle_start_date": "For a standard Mon–Fri workweek, leave any Monday; for shift schedules (2/2, 3/3, 1/3), select the first workday of your shift.",
+          "use_holidays": "Automatically accounts for official public holidays and transferred days off based on the country set in Home Assistant."
+        }
+      },
+      "phytolamp_sun": {
+        "title": "Plant lighting — Sun position",
+        "description": "Configure custom sun angles (azimuth and elevation) for plant lighting.",
+        "data": {
+          "phytolamp_sun_azimuth": "Sun azimuth",
+          "phytolamp_sun_elevation": "Sun elevation"
+        },
+        "data_description": {
+          "phytolamp_sun_azimuth": "Angle between north and the direction of the sun.",
+          "phytolamp_sun_elevation": "Angle of the sun above the horizon."
+        }
+      },
+      "phytolamp_weather": {
+        "title": "Plant lighting — Weather forecast",
+        "description": "Select the weather sensor and weather conditions for plant lighting.",
+        "data": {
+          "phytolamp_forecast_sensor": "Weather sensor",
+          "phytolamp_forecasts": "Weather conditions"
+        }
+      },
+      "phytolamp_illuminance": {
+        "title": "Plant lighting — Illuminance",
+        "description": "Select the illuminance sensor and custom thresholds for plant lighting.",
+        "data": {
+          "phytolamp_illuminance_sensor": "Illuminance sensor",
+          "phytolamp_min_illuminance": "Lower illuminance threshold",
+          "phytolamp_max_illuminance": "Upper illuminance threshold",
+          "phytolamp_illuminance_delay": "Delay for spikes"
+        }
+      },
+      "watering": {
+        "title": "Plant watering",
+        "description": "Select watering valves / pumps and a default schedule template for all zones (each zone can be configured individually on the “Watering” subdevice card).",
+        "data": {
+          "watering_valves": "Watering valves / pumps",
+          "watering_use_moisture": "Use soil moisture sensors",
+          "watering_morning_time": "Morning watering time",
+          "watering_evening_time": "Evening watering time",
+          "watering_default_morning_mode": "Default mode (morning)",
+          "watering_default_morning_duration": "Default duration (morning)",
+          "watering_default_evening_mode": "Default mode (evening)",
+          "watering_default_evening_duration": "Default duration (evening)"
+        },
+        "data_description": {
+          "watering_valves": "Select all controlled watering valves or pumps (executed sequentially).",
+          "watering_default_morning_mode": "Applied to all selected zones during initial setup."
+        }
+      },
+      "watering_moisture": {
+        "title": "Plant watering — Soil moisture sensors",
+        "description": "Specify the soil moisture threshold (scheduled watering is skipped when exceeded) and map soil moisture sensors to the selected valves.",
+        "data": {
+          "watering_soil_threshold": "Do not water if moisture is above"
+        }
+      }
+    },
+    "error": {
+      "no_modules": "You must select at least one module.",
+      "no_blinds": "You must select at least one blind drive.",
+      "no_phytolamp": "You must select at least one lighting entity.",
+      "no_watering_valves": "You must select at least one watering valve or pump."
+    },
+    "abort": {
+      "already_configured": "This configuration already exists."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Home Orangery — Change settings",
+        "description": "Select the active orangery automation modules.",
+        "data": {
+          "modes": "Enabled modules",
+          "enable_logging": "Enable error logging and notifications",
+          "edit_existing_modes": "Edit previously configured features"
+        },
+        "data_description": {
+          "enable_logging": "Global mode for writing errors to Logbook, sending push notifications, and announcing errors on speakers.",
+          "edit_existing_modes": "Disabled by default — only setup screens for newly enabled modules are shown. Enable this to review and edit already configured features."
+        }
+      },
+      "blinds": {
+        "title": "Blind control",
+        "description": "Select the blind drives and additional blind control features.",
+        "data": {
+          "blinds": "Blind drives",
+          "blinds_modes": "Additional blind features",
+          "split_weekend_schedule": "Separate weekday and weekend schedules"
+        },
+        "data_description": {
+          "split_weekend_schedule": "Disable if every day of the week should follow a single unified schedule (without separating workdays and days off)."
+        }
+      },
+      "sun_protect": {
+        "title": "Direct sun protection",
+        "description": "Main protection settings.",
+        "data": {
+          "sun_sensor": "Sun sensor",
+          "blinds_for_protect": "Blinds for protection",
+          "sun_protect_extras": "Additional conditions"
+        },
+        "data_description": {
+          "blinds_for_protect": "If nothing is selected, all blinds will be used."
+        }
+      },
+      "sun_protect_angles": {
+        "title": "Direct sun protection",
+        "description": "Configure the protection trigger angles. Blinds will close automatically when the sun enters the specified sectors.",
+        "data": {
+          "sun_azimuth": "Sun azimuth",
+          "sun_elevation": "Sun elevation"
+        },
+        "data_description": {
+          "sun_azimuth": "Angle between north and the direction of the sun.",
+          "sun_elevation": "Angle of the sun above the horizon."
+        }
+      },
+      "weather": {
+        "title": "Weather forecast",
+        "description": "Sun protection will be active only under the selected weather conditions.",
+        "data": {
+          "forecast_sensor": "Weather sensor",
+          "forecasts": "Weather conditions for closing"
+        }
+      },
+      "illuminance": {
+        "title": "Illuminance",
+        "description": "Blind reaction to illuminance level.",
+        "data": {
+          "illuminance_sensor": "Illuminance sensor",
+          "min_illuminance": "Lower threshold",
+          "max_illuminance": "Upper threshold",
+          "illuminance_delay": "Delay for spikes"
+        }
+      },
+      "yandex": {
+        "title": "Voice control",
+        "description": "Configure voice commands (phrases separated by ;) and TTS output method.",
+        "data": {
+          "voice_engine": "Voice assistant / TTS mode",
+          "yandex_intent_open": "Open phrases",
+          "yandex_intent_close": "Close phrases",
+          "yandex_intent_position": "Position query phrases",
+          "yandex_intent_status": "Status query phrases",
+          "yandex_media_player": "Media players / speakers",
+          "tts_entity": "Text-to-Speech (TTS) engine",
+          "voice_event": "Voice command event",
+          "yandex_volume": "Response volume"
+        },
+        "data_description": {
+          "voice_engine": "Defaults to Yandex Station (yandex_intent). Select Home Assistant Assist / TTS for other speakers.",
+          "tts_entity": "Used only for standard Home Assistant TTS (Piper, Google, Silero, etc.). Leave empty for Yandex Station.",
+          "voice_event": "Defaults to yandex_intent. You can specify any custom event on the HA bus."
+        }
+      },
+      "device": {
+        "title": "Control device",
+        "description": "Settings for physical rotary buttons or sliders",
+        "data": {
+          "slider_device": "Device (MQTT / ZHA)",
+          "slider_mode": "Device operating mode",
+          "slider_step": "Position step",
+          "slider_fast_speed": "Fast swipe threshold"
+        },
+        "data_description": {
+          "slider_mode": "Full travel — blinds move to the end. Step — changes by N%. Proportional — mathematically calculates swipe length (for sliders).",
+          "slider_step": "Used for step mode — the main mode for rotary buttons.",
+          "slider_fast_speed": "Sliders only! If gesture speed is above the threshold — blinds move to the limit. Below — proportional/step."
+        }
+      },
+      "device_payloads": {
+        "title": "Device command settings",
+        "data": {
+          "basic_topic": "Base MQTT topic",
+          "payload_up": "“Up” message",
+          "payload_down": "“Down” message",
+          "payload_stop": "“Stop” message"
+        }
+      },
+      "limits": {
+        "title": "Travel limits",
+        "description": "Configure upper and lower limits for opening/closing the blinds.",
+        "data": {
+          "up_limit": "Upper travel limit",
+          "down_limit": "Lower travel limit"
+        }
+      },
+      "time": {
+        "title": "Work schedule and holidays",
+        "description": "Configure the work cycle (5/2 by default, 2/2, 3/3, 1/3, etc.) and public holiday handling.",
+        "data": {
+          "open_at_sunrise": "Open at sunrise",
+          "up_time_workday": "But on workdays not earlier than",
+          "up_time_weekend": "But on weekends not earlier than",
+          "close_at_sunset": "Close at sunset",
+          "down_time": "But not later than",
+          "work_days": "Consecutive workdays",
+          "off_days": "Consecutive days off",
+          "cycle_start_date": "First workday of cycle",
+          "use_holidays": "Use weekend schedule on public holidays",
+          "up_time_daily": "But not earlier than"
+        },
+        "data_description": {
+          "cycle_start_date": "For a standard Mon–Fri workweek, leave any Monday; for shift schedules (2/2, 3/3, 1/3), select the first workday of your shift.",
+          "use_holidays": "Automatically accounts for official public holidays and transferred days off based on the country set in Home Assistant."
+        }
+      },
+      "repeats": {
+        "title": "Retries and timings",
+        "description": "Protection settings against blind drive failures.",
+        "data": {
+          "repeat_for": "Number of retries",
+          "delay_for_repeat": "Delay between retries",
+          "movement_time": "Full travel time"
+        }
+      },
+      "logging": {
+        "title": "Error logging and notifications",
+        "description": "Write errors to Logbook, send push notifications, and announce errors on speakers.",
+        "data": {
+          "notify_target": "Push notification recipients",
+          "yandex_media_player": "Media players / speakers for error announcements",
+          "voice_engine": "Speaker TTS mode",
+          "tts_entity": "Text-to-Speech (TTS) engine",
+          "low_battery_threshold": "Low battery warning threshold"
+        },
+        "data_description": {
+          "yandex_media_player": "If speakers are selected, equipment errors and low battery warnings will be announced on them.",
+          "voice_engine": "Defaults to Yandex Station. Select Home Assistant Assist / TTS for other speakers.",
+          "tts_entity": "Used only for standard Home Assistant TTS. Leave empty for Yandex Station.",
+          "low_battery_threshold": "When battery level drops below this threshold, a notification is sent and a warning is created in Repairs."
+        }
+      },
+      "phytolamp": {
+        "title": "Plant lighting",
+        "description": "Select plant grow light entities and settings mode.",
+        "data": {
+          "phytolamp": "Lighting switches / lamps",
+          "phytolamp_use_main_settings": "Use main integration settings",
+          "split_weekend_schedule": "Separate weekday and weekend schedules"
+        },
+        "data_description": {
+          "phytolamp": "Select one or more switch / light entities controlling your grow lights.",
+          "phytolamp_use_main_settings": "When enabled, lighting uses the main integration schedule. Uncheck to configure custom schedule and conditions for plant lighting.",
+          "split_weekend_schedule": "Disable if every day of the week should follow a single unified schedule (without separating workdays and days off)."
+        }
+      },
+      "phytolamp_settings": {
+        "title": "Custom plant lighting settings",
+        "description": "Configure additional conditions and custom schedule for plant lighting.",
+        "data": {
+          "sun_sensor": "Sun sensor",
+          "phytolamp_extras": "Additional conditions",
+          "phytolamp_on_time_workday": "Turn on lighting on weekdays at",
+          "phytolamp_on_time_weekend": "Turn on lighting on weekends at",
+          "phytolamp_off_time": "Turn off lighting at",
+          "work_days": "Consecutive workdays",
+          "off_days": "Consecutive days off",
+          "cycle_start_date": "First workday of cycle",
+          "use_holidays": "Use weekend schedule on public holidays",
+          "phytolamp_on_time_daily": "Turn on lighting at"
+        },
+        "data_description": {
+          "phytolamp_extras": "Select parameters to configure separately for plant lighting.",
+          "cycle_start_date": "For a standard Mon–Fri workweek, leave any Monday; for shift schedules (2/2, 3/3, 1/3), select the first workday of your shift.",
+          "use_holidays": "Automatically accounts for official public holidays and transferred days off based on the country set in Home Assistant."
+        }
+      },
+      "phytolamp_sun": {
+        "title": "Plant lighting — Sun position",
+        "description": "Configure custom sun angles (azimuth and elevation) for plant lighting.",
+        "data": {
+          "phytolamp_sun_azimuth": "Sun azimuth",
+          "phytolamp_sun_elevation": "Sun elevation"
+        },
+        "data_description": {
+          "phytolamp_sun_azimuth": "Angle between north and the direction of the sun.",
+          "phytolamp_sun_elevation": "Angle of the sun above the horizon."
+        }
+      },
+      "phytolamp_weather": {
+        "title": "Plant lighting — Weather forecast",
+        "description": "Select the weather sensor and weather conditions for plant lighting.",
+        "data": {
+          "phytolamp_forecast_sensor": "Weather sensor",
+          "phytolamp_forecasts": "Weather conditions"
+        }
+      },
+      "phytolamp_illuminance": {
+        "title": "Plant lighting — Illuminance",
+        "description": "Select the illuminance sensor and custom thresholds for plant lighting.",
+        "data": {
+          "phytolamp_illuminance_sensor": "Illuminance sensor",
+          "phytolamp_min_illuminance": "Lower illuminance threshold",
+          "phytolamp_max_illuminance": "Upper illuminance threshold",
+          "phytolamp_illuminance_delay": "Delay for spikes"
+        }
+      },
+      "watering": {
+        "title": "Plant watering",
+        "description": "Select watering valves / pumps. When enabled for the first time, a default template for all zones is also configured (individual zone settings are available on the “Watering” subdevice).",
+        "data": {
+          "watering_valves": "Watering valves / pumps",
+          "watering_use_moisture": "Use soil moisture sensors",
+          "watering_morning_time": "Morning watering time",
+          "watering_evening_time": "Evening watering time",
+          "watering_default_morning_mode": "Default mode (morning)",
+          "watering_default_morning_duration": "Default duration (morning)",
+          "watering_default_evening_mode": "Default mode (evening)",
+          "watering_default_evening_duration": "Default duration (evening)"
+        }
+      },
+      "watering_moisture": {
+        "title": "Plant watering — Soil moisture sensors",
+        "description": "Map soil moisture sensors to the selected valves (leave empty if a zone has no sensor).",
+        "data": {
+          "watering_soil_threshold": "Do not water if moisture is above"
+        }
+      }
+    },
+    "error": {
+      "no_modules": "You must select at least one module.",
+      "no_blinds": "You must select at least one blind.",
+      "no_phytolamp": "You must select at least one lighting entity.",
+      "no_watering_valves": "You must select at least one watering valve or pump."
+    }
+  },
+  "device": {
+    "loggia": {
+      "name": "{title}"
+    },
+    "schedule": {
+      "name": "{title}: schedule"
+    },
+    "sun": {
+      "name": "{title}: sun protection"
+    },
+    "illuminance": {
+      "name": "{title}: illuminance"
+    },
+    "control": {
+      "name": "{title}: control"
+    },
+    "phytolamp": {
+      "name": "{title}: lighting"
+    },
+    "watering": {
+      "name": "{title}: watering"
+    },
+    "drives": {
+      "name": "{title}: drives"
+    }
+  },
+  "issues": {
+    "blinds_error": {
+      "title": "{title}: blind drive errors",
+      "description": "Blind drives did not reach the target position during the last command: {devices}.\n\nCheck power and wireless connectivity for these drives. This issue will clear automatically once the drives reach their target position."
+    },
+    "phytolamp_error": {
+      "title": "{title}: plant lighting errors",
+      "description": "Plant lighting switches or lights did not change state on command: {devices}.\n\nCheck device availability on your network. This issue will clear automatically once the devices respond."
+    },
+    "watering_error": {
+      "title": "{title}: plant watering errors",
+      "description": "Issues detected with watering valves or soil moisture sensors: {devices}.\n\nCheck valve connectivity and soil sensor batteries. This issue will clear automatically once the devices recover."
+    },
+    "low_battery": {
+      "title": "{title}: low battery level",
+      "description": "Battery level dropped below the {threshold}% threshold: {devices}.\n\nReplace or recharge the batteries. This issue will clear automatically once the battery recovers."
+    }
+  },
+  "entity": {
+    "cover": {
+      "blinds": {
+        "name": "Blinds"
+      },
+      "sun_blinds": {
+        "name": "Sun protection blinds"
+      }
+    },
+    "sensor": {
+      "status": {
+        "name": "Blinds",
+        "state": {
+          "not_configured": "Not configured",
+          "default_title": "Orangery",
+          "no_active": "No active blinds",
+          "all_open": "All fully open",
+          "all_closed": "All fully closed",
+          "excluded_suffix": "excluded",
+          "unknown": "unknown",
+          "tts_no_blinds": "No blinds selected",
+          "tts_all_open": "All blinds are fully open",
+          "tts_all_closed": "All blinds are fully closed",
+          "except_1": "one blind",
+          "except_2": "two blinds",
+          "except_3": "three blinds",
+          "except_4": "four blinds",
+          "except_5": "five blinds",
+          "except_6": "six blinds",
+          "except_7": "seven blinds",
+          "except_8": "eight blinds",
+          "except_9": "nine blinds",
+          "except_10": "ten blinds",
+          "intent_open_default": "Open blinds; Raise blinds",
+          "intent_close_default": "Close blinds; Lower blinds",
+          "intent_position_default": "Blinds position",
+          "intent_status_default": "Blinds status; How are the blinds"
+        }
+      },
+      "phytolamp_status": {
+        "name": "Lighting",
+        "state": {
+          "not_configured": "Not configured",
+          "on": "On",
+          "off": "Off",
+          "lamp_on": "On",
+          "lamp_off": "Off"
+        }
+      },
+      "next_action": {
+        "name": "Next",
+        "state": {
+          "no_actions": "No scheduled actions"
+        },
+        "state_attributes": {
+          "blind_action": {
+            "name": "Blinds"
+          },
+          "light_action": {
+            "name": "Lighting"
+          },
+          "watering_action": {
+            "name": "Watering"
+          }
+        }
+      },
+      "open_count": {
+        "name": "Open"
+      },
+      "closed_count": {
+        "name": "Closed"
+      },
+      "error_count": {
+        "name": "Errors"
+      },
+      "battery": {
+        "name": "Battery level"
+      },
+      "phytolamp_on_count": {
+        "name": "On"
+      },
+      "phytolamp_off_count": {
+        "name": "Off"
+      },
+      "phytolamp_error_count": {
+        "name": "Errors",
+        "state_attributes": {
+          "failed_lamps": {
+            "name": "Failed lamps"
+          }
+        }
+      },
+      "watering_status": {
+        "name": "Watering",
+        "state": {
+          "not_configured": "Not configured",
+          "disabled": "Disabled",
+          "skip_next": "Skip next watering",
+          "no_active_zones": "No active zones"
+        }
+      },
+      "watering_active_count": {
+        "name": "Active zones",
+        "state_attributes": {
+          "total_zones": {
+            "name": "Total zones"
+          }
+        }
+      },
+      "watering_error_count": {
+        "name": "Errors",
+        "state_attributes": {
+          "valve_errors": {
+            "name": "Valve errors"
+          },
+          "sensor_errors": {
+            "name": "Sensor errors"
+          },
+          "failed_valves": {
+            "name": "Failed valves"
+          },
+          "failed_sensors": {
+            "name": "Failed sensors"
+          }
+        }
+      },
+      "watering_battery": {
+        "name": "Battery level"
+      }
+    },
+    "time": {
+      "illuminance_delay": {
+        "name": "Delay"
+      },
+      "down_time": {
+        "name": "Blinds: close at"
+      },
+      "up_time_workday": {
+        "name": "Blinds: open on weekdays"
+      },
+      "up_time_weekend": {
+        "name": "Blinds: open on weekends"
+      },
+      "phytolamp_on_time_workday": {
+        "name": "Lighting: turn on on weekdays"
+      },
+      "phytolamp_on_time_weekend": {
+        "name": "Lighting: turn on on weekends"
+      },
+      "phytolamp_off_time": {
+        "name": "Lighting: turn off at"
+      },
+      "phytolamp_illuminance_delay": {
+        "name": "Illuminance delay"
+      },
+      "watering_morning_time": {
+        "name": "Watering: morning"
+      },
+      "watering_evening_time": {
+        "name": "Watering: evening"
+      },
+      "up_time_daily": {
+        "name": "Blinds: open at"
+      },
+      "phytolamp_on_time_daily": {
+        "name": "Lighting: turn on at"
+      }
+    },
+    "switch": {
+      "open_at_sunrise": {
+        "name": "Blinds: open at sunrise"
+      },
+      "close_at_sunset": {
+        "name": "Blinds: close at sunset"
+      },
+      "watering_enabled": {
+        "name": "Auto watering"
+      },
+      "watering_skip_next": {
+        "name": "Skip next watering"
+      }
+    },
+    "number": {
+      "min_illuminance": {
+        "name": "Lower threshold"
+      },
+      "max_illuminance": {
+        "name": "Upper threshold"
+      },
+      "movement_time": {
+        "name": "Full travel time"
+      },
+      "repeat_for": {
+        "name": "Number of retries"
+      },
+      "up_limit": {
+        "name": "Upper limit"
+      },
+      "down_limit": {
+        "name": "Lower limit"
+      },
+      "yandex_volume": {
+        "name": "Volume"
+      },
+      "slider_step": {
+        "name": "Position step"
+      },
+      "slider_fast_speed": {
+        "name": "Swipe speed"
+      },
+      "sun_azimuth": {
+        "name": "Azimuth"
+      },
+      "sun_elevation": {
+        "name": "Elevation angle"
+      },
+      "delay_for_repeat": {
+        "name": "Delay between retries"
+      },
+      "phytolamp_sun_azimuth": {
+        "name": "Sun azimuth"
+      },
+      "phytolamp_sun_elevation": {
+        "name": "Sun elevation angle"
+      },
+      "phytolamp_min_illuminance": {
+        "name": "Lower illuminance threshold"
+      },
+      "phytolamp_max_illuminance": {
+        "name": "Upper illuminance threshold"
+      },
+      "watering_soil_threshold": {
+        "name": "Soil moisture threshold"
+      },
+      "watering_morning_duration": {
+        "name": "Watering duration (morning)"
+      },
+      "watering_evening_duration": {
+        "name": "Watering duration (evening)"
+      },
+      "low_battery_threshold": {
+        "name": "Low battery threshold"
+      }
+    },
+    "select": {
+      "manual_action": {
+        "name": "Action",
+        "state": {
+          "stop": "Stop",
+          "open": "Open fully",
+          "close": "Close fully",
+          "pos_10": "Open to 10%",
+          "pos_20": "Open to 20%",
+          "pos_30": "Open to 30%",
+          "pos_40": "Open to 40%",
+          "pos_50": "Open to 50%",
+          "pos_60": "Open to 60%",
+          "pos_70": "Open to 70%",
+          "pos_80": "Open to 80%",
+          "pos_90": "Open to 90%"
+        }
+      },
+      "excluded_blinds": {
+        "name": "Used drives",
+        "state": {
+          "enable_all": "Enable all drives",
+          "all_active": "All enabled",
+          "excluded": "Excluded"
+        }
+      },
+      "watering_zone": {
+        "name": "Watering zone",
+        "state": {
+          "stop": "Stop",
+          "all_zones": "All zones (bulk)",
+          "morning_short": "Morning",
+          "evening_short": "Evening",
+          "unit_sec": "s"
+        }
+      },
+      "watering_morning_zones": {
+        "name": "Zones for morning watering",
+        "state": {
+          "enable_all": "Enable all zones",
+          "all_active": "All enabled",
+          "excluded": "Excluded"
+        }
+      },
+      "watering_evening_zones": {
+        "name": "Zones for evening watering",
+        "state": {
+          "enable_all": "Enable all zones",
+          "all_active": "All enabled",
+          "excluded": "Excluded"
+        }
+      },
+      "watering_morning_mode": {
+        "name": "Watering mode (morning)",
+        "state": {
+          "off": "Disabled",
+          "daily": "Daily",
+          "every_other_day": "Every other day",
+          "every_two_days": "Every two days",
+          "by_sensor": "By sensor"
+        }
+      },
+      "watering_evening_mode": {
+        "name": "Watering mode (evening)",
+        "state": {
+          "off": "Disabled",
+          "daily": "Daily",
+          "every_other_day": "Every other day",
+          "every_two_days": "Every two days",
+          "by_sensor": "By sensor"
+        }
+      }
+    },
+    "button": {
+      "execute_action": {
+        "name": "Execute"
+      },
+      "watering_execute": {
+        "name": "Execute"
+      }
+    }
+  },
+  "selector": {
+    "modes": {
+      "options": {
+        "blinds": "Enable blind control",
+        "phytolamp": "Enable plant lighting",
+        "watering": "Enable plant watering"
+      }
+    },
+    "blinds_modes": {
+      "options": {
+        "sun_protect": "Enable direct sun protection",
+        "slider": "Use remote control / switch"
+      }
+    },
+    "watering_mode": {
+      "options": {
+        "off": "Disabled",
+        "daily": "Daily",
+        "every_other_day": "Every other day",
+        "every_two_days": "Every two days",
+        "by_sensor": "By sensor"
+      }
+    },
+    "sun_protect_extras": {
+      "options": {
+        "use_forecast": "Use weather forecast",
+        "use_illuminance": "Use illuminance level"
+      }
+    },
+    "forecasts": {
+      "options": {
+        "sunny": "Sunny",
+        "partlycloudy": "Partly cloudy",
+        "cloudy": "Cloudy",
+        "fog": "Fog"
+      }
+    },
+    "slider_mode": {
+      "options": {
+        "full": "Full travel",
+        "step": "Fixed step",
+        "proportional": "Proportional"
+      }
+    },
+    "voice_engine": {
+      "options": {
+        "yandex": "Yandex Station (built-in TTS)",
+        "assist": "Standard Home Assistant TTS (tts.speak)",
+        "custom": "Standard Home Assistant TTS (tts.speak)"
+      }
+    },
+    "phytolamp_extras": {
+      "options": {
+        "phytolamp_use_sun": "Use sun position",
+        "phytolamp_use_illuminance": "Use illuminance level",
+        "phytolamp_use_forecast": "Use weather forecast"
+      }
+    }
+  },
+  "common": {
+    "all_open_except": "All fully open except {count}",
+    "all_closed_except": "All fully closed except {count}",
+    "tts_all_open_except": "All blinds are fully open except {except_text}",
+    "tts_all_closed_except": "All blinds are fully closed except {except_text}",
+    "except_many": "{count} blinds",
+    "tts_pos_unknown": "{name} — position unknown",
+    "tts_pos_closed": "{name} closed",
+    "tts_pos_open": "{name} fully open",
+    "tts_pos_pct": "{name} open to {pos}%",
+    "will_open": "Blinds will open at {time}",
+    "will_close": "Blinds will close at {time}",
+    "short_will_open": "Will open at {time}",
+    "short_will_close": "Will close at {time}",
+    "light_will_on": "Lighting will turn on at {time}",
+    "light_will_off": "Lighting will turn off at {time}",
+    "short_light_will_on": "Will turn on at {time}",
+    "short_light_will_off": "Will turn off at {time}",
+    "watering_will_on": "Watering will start at {time}",
+    "short_watering_will_on": "Will start at {time}",
+    "phytolamp_on_partial": "On ({on} of {total})",
+    "watering_now": "Watering: {name}",
+    "scheduled": "Scheduled ({times})",
+    "tts_single_open": "Warning! 1 blind failed to open. Check: {blinds}",
+    "tts_single_close": "Warning! 1 blind failed to close. Check: {blinds}",
+    "tts_multi_open": "Warning! {count} blinds failed to open. Check: {blinds}",
+    "tts_multi_close": "Warning! {count} blinds failed to close. Check: {blinds}",
+    "log_open": "Some blinds failed to open (target {target}%): {blinds}",
+    "log_close": "Some blinds failed to close (target {target}%): {blinds}",
+    "logbook_name": "Blinds",
+    "notify_title": "Blinds: Blind error",
+    "log_setup_entry": "Setting up Orry integration: {title}",
+    "log_already_at_pos": "Orangery: All blinds are already at position {position}% (±{tolerance}%)",
+    "log_set_pos": "Orangery: Setting position {position}% → {blinds}",
+    "log_stop": "Orangery: Stop → {blinds}",
+    "log_out_of_limits": "Orangery: Action {target}% is outside configured limits ({low}%..{high}%), movement cancelled.",
+    "log_error_prefix": "Orangery: {message}",
+    "log_notify_error": "Orangery: Failed to send notification to {target}: {error}",
+    "log_phytolamp_on": "Orangery: Turning plant lighting on → {lamps}",
+    "log_phytolamp_off": "Orangery: Turning plant lighting off → {lamps}",
+    "log_phytolamp_error": "Orangery: Plant lighting control error ({service}): {error}",
+    "log_phytolamp_delay_on": "Orangery: Plant lighting will turn on in {delay} s (full blind travel time).",
+    "log_phytolamp_delay_off": "Orangery: Plant lighting will turn off in {delay} s (full blind travel time).",
+    "log_schedule_open": "Orangery: Scheduled opening ({time}).",
+    "log_schedule_close": "Orangery: Scheduled closing ({time}).",
+    "log_schedule_phytolamp_on": "Orangery: Scheduled plant lighting turn on ({time}).",
+    "log_schedule_phytolamp_off": "Orangery: Scheduled plant lighting turn off ({time}).",
+    "log_sun_protect_on": "Orangery: Sun protection activated (Closing).",
+    "log_sun_protect_off": "Orangery: Sun protection deactivated (Opening).",
+    "log_phytolamp_custom_off": "Orangery: Enough natural light (custom settings) — turning plant lighting off.",
+    "log_phytolamp_custom_on": "Orangery: Insufficient natural light (custom settings) — turning plant lighting on.",
+    "log_tts_no_player": "Orangery: No media player (yandex_media_player) selected for TTS announcement: {message}",
+    "log_tts_error": "Orangery: TTS playback error on {players}: {error}",
+    "log_voice_event": "Orangery: Voice event \"{event}\", text=\"{text}\", target={target}",
+    "log_slider_action": "Orangery: Slider action=\"{action}\", displacement={displacement}, speed={speed}, time_ms={time_ms} → position {target}%",
+    "log_mqtt_error": "Orangery: MQTT listener error: {error}",
+    "log_manager_start": "Orangery: starting manager. Modes: {modes}",
+    "log_manager_stop": "Orangery: stopping manager",
+    "log_watering_already_running": "Orangery: Previous watering cycle is still running, {period} start skipped.",
+    "log_watering_disabled": "Orangery: Automatic watering is disabled, {period} cycle skipped.",
+    "log_watering_skip_next": "Orangery: Skip next watering is enabled — {period} cycle skipped, flag reset.",
+    "log_watering_start": "Orangery: Starting watering cycle ({period}) for {count} zones.",
+    "log_watering_no_sensor": "Orangery: Valve {valve} is in By sensor mode, but no sensor is configured — skipping.",
+    "log_watering_sensor_unavail": "Orangery: Sensor {sensor} for {valve} is unavailable in By sensor mode — skipping.",
+    "log_watering_moisture_skip": "Orangery: Skipping watering for {valve} — soil moisture {moisture}% >= threshold {threshold}%.",
+    "log_watering_valve_on": "Orangery: Turning on watering valve {valve} for {duration} s (mode: {mode}).",
+    "log_watering_cancelled": "Orangery: Watering cycle interrupted while {valve} was active — emergency valve shutoff.",
+    "log_watering_valve_off_error": "Orangery: Error turning off watering valve {valve}: {error}",
+    "log_watering_manual_start": "Orangery: Manual dosed watering started ({count} zones, {duration} s each).",
+    "log_watering_manual_stop": "Orangery: Watering stopped manually by user.",
+    "log_watering_safety_cutoff": "Orangery: Overflow protection triggered — forcibly closing valve {valve} (exceeded {timeout} s limit).",
+    "logbook_name_phytolamp": "Plant lighting",
+    "notify_title_phytolamp": "Plant lighting: Switching error",
+    "log_phytolamp_fail_on": "Plant lighting devices failed to turn on: {devices}",
+    "log_phytolamp_fail_off": "Plant lighting devices failed to turn off: {devices}",
+    "tts_phytolamp_fail_on": "Warning! Plant lighting failed to turn on. Check: {devices}",
+    "tts_phytolamp_fail_off": "Warning! Plant lighting failed to turn off. Check: {devices}",
+    "logbook_name_watering": "Plant watering",
+    "notify_title_watering": "Watering: Equipment error",
+    "log_watering_valve_fail": "Watering valve control error: {devices}",
+    "tts_watering_valve_fail": "Warning! Watering valve error. Check: {devices}",
+    "log_watering_cutoff_alert": "Overflow protection triggered! Forcibly closed valve: {devices}",
+    "tts_watering_cutoff_alert": "Warning! Watering overflow protection triggered. Valve forcibly closed: {devices}",
+    "log_watering_sensor_fail": "Soil moisture sensor is unavailable: {devices}",
+    "tts_watering_sensor_fail": "Warning! Soil moisture sensor is unavailable: {devices}",
+    "logbook_name_battery": "Device battery",
+    "notify_title_battery": "Low battery warning",
+    "log_low_battery": "Low battery level (< {threshold}%): {devices}",
+    "tts_low_battery": "Warning! Low battery level: {devices}"
+  }
+}

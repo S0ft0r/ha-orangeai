@@ -1,0 +1,201 @@
+{
+  "entity": {
+    "cover": {
+      "blinds": {
+        "default": "mdi:blinds-horizontal"
+      },
+      "sun_blinds": {
+        "default": "mdi:window-shutter-cog"
+      }
+    },
+    "sensor": {
+      "status": {
+        "default": "mdi:blinds-horizontal"
+      },
+      "phytolamp_status": {
+        "default": "mdi:lightbulb-on-outline"
+      },
+      "next_action": {
+        "default": "mdi:page-next-outline"
+      },
+      "open_count": {
+        "default": "mdi:window-shutter-open"
+      },
+      "closed_count": {
+        "default": "mdi:window-shutter"
+      },
+      "error_count": {
+        "default": "mdi:alert-circle-outline"
+      },
+      "battery": {
+        "default": "mdi:battery"
+      },
+      "phytolamp_on_count": {
+        "default": "mdi:lightbulb-on"
+      },
+      "phytolamp_off_count": {
+        "default": "mdi:lightbulb-off-outline"
+      },
+      "phytolamp_error_count": {
+        "default": "mdi:alert-circle-outline"
+      },
+      "watering_status": {
+        "default": "mdi:watering-can-outline"
+      },
+      "watering_active_count": {
+        "default": "mdi:pipe-valve"
+      },
+      "watering_error_count": {
+        "default": "mdi:alert-circle-outline"
+      },
+      "watering_battery": {
+        "default": "mdi:battery"
+      }
+    },
+    "time": {
+      "illuminance_delay": {
+        "default": "mdi:sun-clock-outline"
+      },
+      "down_time": {
+        "default": "mdi:sort-clock-ascending-outline"
+      },
+      "up_time_workday": {
+        "default": "mdi:sort-clock-descending-outline"
+      },
+      "up_time_weekend": {
+        "default": "mdi:sort-clock-descending"
+      },
+      "phytolamp_on_time_workday": {
+        "default": "mdi:lightbulb-on-outline"
+      },
+      "phytolamp_on_time_weekend": {
+        "default": "mdi:lightbulb-on"
+      },
+      "phytolamp_off_time": {
+        "default": "mdi:lightbulb-off-outline"
+      },
+      "phytolamp_illuminance_delay": {
+        "default": "mdi:sun-clock-outline"
+      },
+      "watering_morning_time": {
+        "default": "mdi:clock-time-eight-outline"
+      },
+      "watering_evening_time": {
+        "default": "mdi:clock-time-eight"
+      },
+      "up_time_daily": {
+        "default": "mdi:clock-start"
+      },
+      "phytolamp_on_time_daily": {
+        "default": "mdi:timer-play-outline"
+      }
+    },
+    "switch": {
+      "open_at_sunrise": {
+        "default": "mdi:weather-sunset-up"
+      },
+      "close_at_sunset": {
+        "default": "mdi:weather-sunset-down"
+      },
+      "watering_enabled": {
+        "default": "mdi:water-pump"
+      },
+      "watering_skip_next": {
+        "default": "mdi:debug-step-over"
+      }
+    },
+    "select": {
+      "manual_action": {
+        "default": "mdi:blinds-horizontal"
+      },
+      "excluded_blinds": {
+        "default": "mdi:playlist-remove"
+      },
+      "watering_zone": {
+        "default": "mdi:pipe-valve"
+      },
+      "watering_morning_zones": {
+        "default": "mdi:playlist-remove"
+      },
+      "watering_evening_zones": {
+        "default": "mdi:playlist-remove"
+      },
+      "watering_morning_mode": {
+        "default": "mdi:weather-sunny"
+      },
+      "watering_evening_mode": {
+        "default": "mdi:weather-night"
+      }
+    },
+    "button": {
+      "execute_action": {
+        "default": "mdi:play-circle-outline"
+      },
+      "watering_execute": {
+        "default": "mdi:play-circle-outline"
+      }
+    },
+    "number": {
+      "min_illuminance": {
+        "default": "mdi:brightness-5"
+      },
+      "max_illuminance": {
+        "default": "mdi:brightness-7"
+      },
+      "movement_time": {
+        "default": "mdi:timeline-clock-outline"
+      },
+      "delay_for_repeat": {
+        "default": "mdi:timer-sync-outline"
+      },
+      "repeat_for": {
+        "default": "mdi:repeat"
+      },
+      "up_limit": {
+        "default": "mdi:arrow-collapse-up"
+      },
+      "down_limit": {
+        "default": "mdi:arrow-collapse-down"
+      },
+      "yandex_volume": {
+        "default": "mdi:volume-high"
+      },
+      "slider_step": {
+        "default": "mdi:swap-vertical"
+      },
+      "slider_fast_speed": {
+        "default": "mdi:gesture-swipe-vertical"
+      },
+      "sun_azimuth": {
+        "default": "mdi:sun-compass"
+      },
+      "sun_elevation": {
+        "default": "mdi:sun-angle-outline"
+      },
+      "phytolamp_sun_azimuth": {
+        "default": "mdi:sun-compass"
+      },
+      "phytolamp_sun_elevation": {
+        "default": "mdi:sun-angle-outline"
+      },
+      "phytolamp_min_illuminance": {
+        "default": "mdi:brightness-5"
+      },
+      "phytolamp_max_illuminance": {
+        "default": "mdi:brightness-7"
+      },
+      "watering_soil_threshold": {
+        "default": "mdi:water-percent"
+      },
+      "watering_morning_duration": {
+        "default": "mdi:timer-outline"
+      },
+      "watering_evening_duration": {
+        "default": "mdi:timer-outline"
+      },
+      "low_battery_threshold": {
+        "default": "mdi:battery-alert-variant-outline"
+      }
+    }
+  }
+}

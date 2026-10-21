@@ -1,0 +1,21 @@
+{
+  "domain": "orry",
+  "name": "Home Orangery",
+  "after_dependencies": [
+    "mqtt"
+  ],
+  "codeowners": [
+    "@S0ft0r"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "cover",
+    "frontend",
+    "http"
+  ],
+  "documentation": "https://github.com/S0ft0r/ha-orangeai",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/S0ft0r/ha-orangeai/issues",
+  "requirements": [],
+  "version": "0.1.20"
+}
