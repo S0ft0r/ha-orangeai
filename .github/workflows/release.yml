@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Тег релиза (например, v0.1.20)"
+        required: true
+        default: "v0.1.20"
+      prerelease:
+        description: "Отметить как Pre-release (альфа/бета)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Publish Release Archive
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Validate integration before packaging
+        run: python3 scripts/validate.py
+
+      - name: Build orry.zip archive
+        run: |
+          cd custom_components
+          zip -r ../orry.zip orry -x "*/__pycache__/*" "*.pyc" "*.pyo"
+
+      - name: Extract latest release notes from CHANGELOG.md & CHANGELOG.en.md
+        env:
+          REPO: ${{ github.repository }}
+        run: |
+          python3 - <<'EOF'
+          import os
+          from pathlib import Path
+          import re
+
+          repo = os.environ.get("REPO", "S0ft0r/ha-orangeai")
+          pattern = r"(^## \[.*?)(?=^---|\Z|^## \[)"
+
+          ru_text = Path("CHANGELOG.md").read_text(encoding="utf-8")
+          ru_match = re.search(pattern, ru_text, flags=re.MULTILINE | re.DOTALL)
+          ru_notes = ru_match.group(1).strip() if ru_match else "Автоматическая сборка релиза."
+
+          en_notes = ""
+          en_path = Path("CHANGELOG.en.md")
+          if en_path.is_file():
+              en_text = en_path.read_text(encoding="utf-8")
+              en_match = re.search(pattern, en_text, flags=re.MULTILINE | re.DOTALL)
+              if en_match:
+                  en_notes = en_match.group(1).strip()
+
+          header = (
+              f"🌐 **Language:** **🇷🇺 Русский** | "
+              f"[🇬🇧 Full English changelog (CHANGELOG.en.md)](https://github.com/{repo}/blob/main/CHANGELOG.en.md)\n"
+              f"*(🇬🇧 English version below)*\n\n"
+          )
+          body = header + ru_notes
+          if en_notes:
+              body += f"\n\n---\n\n🇬🇧 **English**\n\n{en_notes}"
+          Path("release_notes.md").write_text(body + "\n", encoding="utf-8")
+          EOF
+
+      - name: Create or Update GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+          IS_PRERELEASE: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease || contains(github.ref_name, '-') }}
+        run: |
+          PRERELEASE_FLAG=""
+          if [ "$IS_PRERELEASE" = "true" ]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" orry.zip --clobber
+            gh release edit "$TAG" --notes-file release_notes.md
+          else
+            gh release create "$TAG" orry.zip \
+              --target "${{ github.sha }}" \
+              --title "Home Orangery $TAG" \
+              --notes-file release_notes.md \
+              $PRERELEASE_FLAG
+          fi
