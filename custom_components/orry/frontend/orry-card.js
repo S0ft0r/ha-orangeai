@@ -4,7 +4,7 @@
  */
 
 const CARD_TYPE = "orry-card";
-const CARD_VERSION = "0.1.24.1";
+const CARD_VERSION = "0.1.24.2";
 const DOMAIN = "orry";
 
 const ENTITY_KEYS = [
@@ -206,22 +206,22 @@ const TEXT = {
     sensorNotFound: "Выбранный сенсор не найден. Проверьте настройки карточки.",
     noModules: "Не найдены активные модули Orry для выбранной оранжереи.",
     averagePosition: "Среднее положение",
+    averageActiveBlinds: "Среднее положение активных штор",
+    activeBlinds: "Активных штор",
+    setBlindPosition: "Установить положение активных штор",
+    totalDevices: "Всего устройств",
+    enabledDevices: "Включено",
+    turnLightingOn: "Включить подсветку",
+    turnLightingOff: "Выключить подсветку",
     lightingOn: "Включена",
     lightingOff: "Выключена",
     lightingUnavailable: "Нет данных о светильниках",
     scheduled: "По расписанию",
-    groupControl: "Сводное управление",
-    allBlinds: "Все активные шторы",
     drivePositions: "Положение приводов",
     updatedNow: "Текущее состояние",
     sunProtection: "Защита от солнца",
     driveEnabled: "Привод включён в работу",
-    open: "Открыть",
-    stop: "Стоп",
-    close: "Закрыть",
-    activeDrives: "активных",
-    excluded: "исключено",
-    errors: "ошибок",
+    errors: "Ошибок",
     noDriveData: "Нет данных о положениях приводов",
     unavailable: "Недоступно",
     on: "Включено",
@@ -259,22 +259,22 @@ const TEXT = {
     sensorNotFound: "The selected sensor was not found. Check the card settings.",
     noModules: "No active Orry modules were found for the selected orangery.",
     averagePosition: "Average position",
+    averageActiveBlinds: "Average active blinds position",
+    activeBlinds: "Active blinds",
+    setBlindPosition: "Set active blinds position",
+    totalDevices: "Total devices",
+    enabledDevices: "On",
+    turnLightingOn: "Turn lighting on",
+    turnLightingOff: "Turn lighting off",
     lightingOn: "On",
     lightingOff: "Off",
     lightingUnavailable: "No light data available",
     scheduled: "Scheduled",
-    groupControl: "Group control",
-    allBlinds: "All active blinds",
     drivePositions: "Drive positions",
     updatedNow: "Current state",
     sunProtection: "Sun protection",
     driveEnabled: "Drive enabled for operation",
-    open: "Open",
-    stop: "Stop",
-    close: "Close",
-    activeDrives: "active",
-    excluded: "excluded",
-    errors: "errors",
+    errors: "Errors",
     noDriveData: "No drive position data",
     unavailable: "Unavailable",
     on: "On",
@@ -304,15 +304,12 @@ const TEXT = {
 
 const ICONS = {
   greenhouse:
-    "<path d='M3 20.5h18M5.5 20.5V9l6.5-5 6.5 5v11.5M9 20.5v-6h6v6M8 10.5h.01M12 10.5h.01M16 10.5h.01'/>",
+    "<path d='M3.5 20.5h17M5.5 20.5V9l6.5-5 6.5 5v11.5M9 20.5v-6h6v6M8 10.5h.01M12 10.5h.01M16 10.5h.01'/><path d='M12 8.5c-1.7-2.1-4.3-1.4-4.3.5 0 1.7 2.2 2.2 4.3 3.8 2.1-1.6 4.3-2.1 4.3-3.8 0-1.9-2.6-2.6-4.3-.5Z'/>",
   next: "<circle cx='12' cy='12' r='9'/><path d='M12 7v5l3 2'/>",
-  blinds: "<path d='M4 4h16M5 5v14M9 5v12M13 5v10M17 5v8M20 5v14M4 20h16'/>",
   light:
     "<path d='M9 18h6M10 22h4M8.5 14.5a6 6 0 1 1 7 0c-.8.6-1.3 1.4-1.4 2.5h-4.2c-.1-1.1-.6-1.9-1.4-2.5Z'/><path d='M12 2v2M4.9 4.9l1.4 1.4M19.1 4.9l-1.4 1.4'/>",
   water:
     "<path d='M12 3C9 7.3 6 10.3 6 14a6 6 0 0 0 12 0c0-3.7-3-6.7-6-11Z'/><path d='M9.5 15.5a2.5 2.5 0 0 0 2.5 2.5'/>",
-  open: "<path d='M12 19V5M6 11l6-6 6 6'/>",
-  close: "<path d='M12 5v14M6 13l6 6 6-6'/>",
   pause: "<rect x='6' y='5' width='4' height='14' rx='1'/><rect x='14' y='5' width='4' height='14' rx='1'/>",
   clock: "<circle cx='12' cy='12' r='9'/><path d='M12 7v5l3 2'/>",
   drop: "<path d='M12 3C9 7.3 6 10.3 6 14a6 6 0 0 0 12 0c0-3.7-3-6.7-6-11Z'/>",
@@ -558,7 +555,30 @@ const CARD_STYLES = `
     white-space: nowrap;
     text-overflow: ellipsis;
   }
-  .header-subtitle { margin-top: 2px; color: var(--secondary-text-color); font-size: 12px; }
+  .header-subtitle {
+    min-width: 0;
+    margin-top: 2px;
+    overflow: hidden;
+    color: var(--secondary-text-color);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .header-subtitle-track { display: inline-flex; align-items: center; width: max-content; white-space: nowrap; }
+  .header-subtitle-copy { display: inline-block; flex: 0 0 auto; white-space: nowrap; }
+  .header-subtitle-clone { display: none; }
+  .header-subtitle.is-scrolling .header-subtitle-clone { display: inline-block; }
+  .header-subtitle.is-scrolling .header-subtitle-track {
+    gap: 28px;
+    animation: subtitle-marquee var(--subtitle-duration, 12s) linear infinite;
+    will-change: transform;
+  }
+  .header-subtitle.is-scrolling:hover .header-subtitle-track,
+  .header-subtitle.is-scrolling:focus-within .header-subtitle-track { animation-play-state: paused; }
+  @keyframes subtitle-marquee { to { transform: translateX(var(--subtitle-distance, -280px)); } }
+  @media (prefers-reduced-motion: reduce) {
+    .header-subtitle.is-scrolling .header-subtitle-track { animation: none; will-change: auto; }
+    .header-subtitle.is-scrolling .header-subtitle-clone { display: none; }
+  }
   .next-pill {
     max-width: calc(100% - 36px);
     min-width: 0;
@@ -596,9 +616,80 @@ const CARD_STYLES = `
     background: var(--orry-tile-bg);
   }
   .kpi-top { display: flex; align-items: center; justify-content: space-between; gap: 5px; color: var(--secondary-text-color); font-size: 11px; }
-  .kpi-top svg { width: 15px; height: 15px; flex: 0 0 15px; }
+  .kpi-top svg, .kpi-top ha-icon { width: 16px; height: 16px; flex: 0 0 16px; --mdc-icon-size: 16px; }
+  .kpi-state-icon { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .kpi-state-icon ha-icon { width: 16px; height: 16px; --mdc-icon-size: 16px; }
   .kpi-main { min-height: 18px; overflow: hidden; font-size: 13px; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; }
   .kpi-sub { overflow: hidden; color: var(--secondary-text-color); font-size: 10px; white-space: nowrap; text-overflow: ellipsis; }
+  .kpi-main.blinds-kpi-main { display: block; min-height: 20px; overflow: visible; }
+  .blinds-summary-range {
+    position: relative;
+    width: 100%;
+    height: 4px;
+    margin: 14px 2px 13px;
+    border-radius: 999px;
+    background: var(--orry-chip-bg);
+  }
+  .blinds-range-fill { width: 50%; height: 100%; border-radius: inherit; background: var(--primary-color, #03a9f4); }
+  .blinds-range-thumb {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--ha-card-background, var(--card-background-color, #fff));
+    border-radius: 50%;
+    background: var(--primary-color, #03a9f4);
+    box-shadow: 0 1px 3px rgba(0,0,0,.25);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .blinds-summary-range-input {
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    left: -10px;
+    width: calc(100% + 20px);
+    height: 20px;
+    margin: 0;
+    padding: 0;
+    transform: translateY(-50%);
+    opacity: 0;
+    border: 0;
+    background: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+  }
+  .blinds-summary-range-input::-webkit-slider-runnable-track { height: 20px; background: transparent; }
+  .blinds-summary-range-input::-webkit-slider-thumb { width: 20px; height: 20px; margin: 0; border: 0; border-radius: 50%; background: transparent; box-shadow: none; -webkit-appearance: none; }
+  .blinds-summary-range-input::-moz-range-track { height: 20px; border: 0; background: transparent; }
+  .blinds-summary-range-input::-moz-range-thumb { width: 20px; height: 20px; border: 0; border-radius: 50%; background: transparent; box-shadow: none; }
+  .blinds-summary-range:focus-within .blinds-range-thumb { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 2px; }
+  .blinds-summary-range-input:disabled { cursor: default; }
+  .kpi-sub.blinds-kpi-sub { display: block; overflow: visible; white-space: nowrap; text-overflow: clip; }
+  .blinds-kpi-counts { display: inline-flex; align-items: center; white-space: nowrap; }
+  .kpi-main.lighting-kpi-main { visibility: hidden; }
+  .lighting-kpi-footer { display: flex; align-items: center; justify-content: space-between; gap: 5px; overflow: visible; }
+  .lighting-kpi-counts { min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
+  .lighting-kpi-button {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--state-icon-color, var(--secondary-text-color));
+    cursor: pointer;
+  }
+  .lighting-kpi-button.is-on { color: var(--state-active-color, #fdd835); }
+  .lighting-kpi-button:hover { background: var(--orry-row-hover); }
+  .lighting-kpi-button:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 1px; }
+  .lighting-kpi-button ha-icon { width: 17px; height: 17px; --mdc-icon-size: 17px; }
+  .lighting-kpi-button:disabled { cursor: default; opacity: .45; }
 
   .tabs-bar {
     display: grid;
@@ -622,22 +713,14 @@ const CARD_STYLES = `
     font-weight: 600;
     cursor: pointer;
   }
-  .tab-btn svg { width: 16px; height: 16px; flex: 0 0 16px; }
+  .tab-btn svg, .tab-btn ha-icon { width: 16px; height: 16px; flex: 0 0 16px; --mdc-icon-size: 16px; }
   .tab-btn.active {
     border-bottom-color: var(--primary-color, #03a9f4);
     background: rgba(3, 169, 244, 0.06);
     color: var(--primary-color, #03a9f4);
   }
-  .tab-badge {
-    min-width: 18px;
-    padding: 1px 5px;
-    border-radius: 999px;
-    background: var(--orry-chip-bg);
-    color: var(--primary-text-color);
-    font-size: 10px;
-    text-align: center;
-  }
-  .tab-btn.active .tab-badge { background: var(--primary-color, #03a9f4); color: #fff; }
+  ha-card.summary-mode .kpi-grid { grid-template-columns: repeat(var(--module-count, 3), minmax(0, 1fr)); }
+  ha-card.summary-mode .tabs-bar, ha-card.summary-mode .panel { display: none; }
 
   .subbar {
     display: flex;
@@ -652,33 +735,7 @@ const CARD_STYLES = `
   }
   .subbar strong { color: var(--primary-text-color); font-weight: 600; }
   .content { padding: 12px 16px 15px; }
-  .control-card {
-    padding: 10px 12px 11px;
-    border: 1px solid var(--divider-color, rgba(127,127,127,.16));
-    border-radius: 10px;
-    background: var(--orry-tile-bg);
-  }
-  .control-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-  .control-title { font-size: 13px; font-weight: 600; }
-  .position-value { color: var(--primary-color, #03a9f4); font-size: 16px; font-weight: 700; }
-  .position-slider { width: 100%; margin: 12px 0 10px; accent-color: var(--primary-color, #03a9f4); }
-  .action-row { display: flex; gap: 7px; }
-  .action-btn {
-    min-height: 32px;
-    flex: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    border: 1px solid var(--divider-color, rgba(127,127,127,.2));
-    border-radius: 7px;
-    background: var(--ha-card-background, var(--card-background-color, #fff));
-    color: var(--primary-text-color);
-    font-size: 11px;
-    cursor: pointer;
-  }
-  .action-btn svg { width: 14px; height: 14px; color: var(--secondary-text-color); }
-  .action-btn:disabled, .toggle:disabled, .switch-icon-button:disabled, .watering-select:disabled { cursor: default; opacity: .45; }
+  .toggle:disabled, .switch-icon-button:disabled, .watering-select:disabled { cursor: default; opacity: .45; }
   .section-label {
     display: flex;
     align-items: center;
@@ -695,7 +752,6 @@ const CARD_STYLES = `
     --drive-column-gap: 7px;
     display: flex;
     flex-direction: column;
-    margin-top: 13px;
   }
   .drive-list-heading, .drive-row {
     display: grid;
@@ -728,10 +784,26 @@ const CARD_STYLES = `
   .drive-main-top .entity-name { min-width: 0; flex: 1; }
   .drive-position { flex: 0 0 auto; color: var(--primary-color, #03a9f4); font-size: 11px; font-weight: 700; white-space: nowrap; }
   .drive-main .mini-track { margin-top: 4px; }
-  .drive-checkbox-cell { min-height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-  .drive-checkbox { width: 15px; height: 15px; margin: 0; accent-color: var(--primary-color, #03a9f4); cursor: pointer; }
-  .drive-checkbox:disabled { cursor: default; opacity: .55; }
-  .drive-checkbox:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 2px; }
+  .drive-checkbox-cell { min-height: 30px; position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .drive-checkbox {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .drive-checkbox-visual { width: 19px; height: 19px; display: flex; align-items: center; justify-content: center; color: var(--state-icon-color, var(--secondary-text-color)); pointer-events: none; }
+  .drive-checkbox:checked + .drive-checkbox-visual { color: var(--state-active-color, var(--primary-color, #03a9f4)); }
+  .drive-checkbox-visual ha-icon { width: 19px; height: 19px; --mdc-icon-size: 19px; }
+  .drive-checkbox-visual .checkbox-marked { display: none; }
+  .drive-checkbox:checked + .drive-checkbox-visual .checkbox-empty { display: none; }
+  .drive-checkbox:checked + .drive-checkbox-visual .checkbox-marked { display: inline-flex; }
+  .drive-checkbox:focus-visible + .drive-checkbox-visual { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 2px; border-radius: 3px; }
+  .drive-checkbox:disabled { cursor: default; }
+  .drive-checkbox:disabled + .drive-checkbox-visual { opacity: .55; }
   .drive-row.is-disabled::before {
     content: "";
     position: absolute;
@@ -881,11 +953,16 @@ const CARD_STYLES = `
     .kpi-grid.module-count-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .kpi-grid.module-count-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .kpi-grid.module-count-3 .kpi-tile:last-child { grid-column: span 2; }
+    ha-card.summary-mode .kpi-grid { grid-template-columns: repeat(var(--module-count, 3), minmax(0, 1fr)); }
+    ha-card.summary-mode .kpi-tile { padding: 7px 6px; }
+    ha-card.summary-mode .kpi-top { font-size: 10px; }
+    ha-card.summary-mode .kpi-main { font-size: 12px; }
+    ha-card.summary-mode .kpi-sub { font-size: 9px; }
+    ha-card.summary-mode .kpi-grid.module-count-3 .kpi-tile:last-child { grid-column: auto; }
     .content { padding-left: 12px; padding-right: 12px; }
     .subbar { padding-left: 12px; padding-right: 12px; }
     .tab-btn { gap: 4px; padding-left: 3px; padding-right: 3px; font-size: 11px; }
     .next-pill { max-width: calc(100% - 36px); font-size: 10px; }
-    .action-btn { font-size: 10px; }
   }
   @media (max-width: 380px) {
     .drive-list { --drive-check-width: 25px; --drive-column-gap: 5px; }
@@ -905,10 +982,17 @@ class OrryCard extends HTMLElement {
     this._activeTab = "blinds";
     this._userSwitchedTab = false;
     this._lastRenderSig = "";
+    this._subtitleObserver = null;
+  }
+
+  disconnectedCallback() {
+    this._subtitleObserver?.disconnect();
+    this._subtitleObserver = null;
   }
 
   static getStubConfig(hass) {
     return {
+      mode: "full",
       entity: findDefaultAnchor(hass),
       default_tab: "blinds",
       drive_indicator: "position",
@@ -919,6 +1003,19 @@ class OrryCard extends HTMLElement {
   static getConfigForm() {
     return {
       schema: [
+        {
+          name: "mode",
+          default: "full",
+          selector: {
+            select: {
+              mode: "dropdown",
+              options: [
+                { value: "full", label: "Полная" },
+                { value: "summary", label: "Краткая" },
+              ],
+            },
+          },
+        },
         {
           name: "entity",
           required: true,
@@ -967,6 +1064,8 @@ class OrryCard extends HTMLElement {
       ],
       computeLabel: (schema) => {
         switch (schema.name) {
+          case "mode":
+            return "Режим карточки";
           case "entity":
             return "Основной сенсор «Далее»";
           case "default_tab":
@@ -984,6 +1083,9 @@ class OrryCard extends HTMLElement {
         }
       },
       computeHelper: (schema) => {
+        if (schema.name === "mode") {
+          return "Полная — вкладки и подробное управление; краткая — те же сводные плитки без вкладок.";
+        }
         if (schema.name === "entity") {
           return "Выберите сенсор «Далее» с основного устройства. Карточка найдёт остальные сущности этой конфигурации Orry автоматически.";
         }
@@ -1004,10 +1106,12 @@ class OrryCard extends HTMLElement {
   setConfig(config) {
     if (!config) throw new Error("A card configuration is required");
     this._config = {
+      mode: "full",
       default_tab: "blinds",
       show_position_percent: true,
       ...config,
     };
+    this._config.mode = this._config.mode === "summary" ? "summary" : "full";
     if (!this._userSwitchedTab) {
       this._activeTab = this._config.default_tab || "blinds";
     }
@@ -1041,7 +1145,7 @@ class OrryCard extends HTMLElement {
   }
 
   getCardSize() {
-    return 8;
+    return this._config?.mode === "summary" ? 4 : 8;
   }
 
   _resolveEntities() {
@@ -1232,7 +1336,7 @@ class OrryCard extends HTMLElement {
   _modules(bundle) {
     const modules = [];
     if (bundle.ids.blinds) {
-      modules.push({ key: "blinds", title: this._text("moduleBlinds"), icon: "blinds" });
+      modules.push({ key: "blinds", title: this._text("moduleBlinds") });
     }
 
     const phytolampState = this._state(bundle, "phytolamp_status");
@@ -1240,7 +1344,7 @@ class OrryCard extends HTMLElement {
       this._lights(bundle).length > 0 ||
       (phytolampState && !isNotConfigured(phytolampState.state))
     ) {
-      modules.push({ key: "phytolamp", title: this._text("moduleLighting"), icon: "light" });
+      modules.push({ key: "phytolamp", title: this._text("moduleLighting") });
     }
 
     const wateringState = this._state(bundle, "watering_status");
@@ -1250,7 +1354,7 @@ class OrryCard extends HTMLElement {
       bundle.ids.watering_execute ||
       (wateringState && !isNotConfigured(wateringState.state))
     ) {
-      modules.push({ key: "watering", title: this._text("moduleWatering"), icon: "water" });
+      modules.push({ key: "watering", title: this._text("moduleWatering") });
     }
     return modules;
   }
@@ -1318,8 +1422,94 @@ class OrryCard extends HTMLElement {
     return matches.find((option) => option.startsWith(marker)) || matches[0] || "";
   }
 
+  _syncSubtitleMarquee() {
+    this._subtitleObserver?.disconnect();
+    this._subtitleObserver = null;
+    const subtitle = this.shadowRoot?.querySelector(".header-subtitle");
+    if (!subtitle) return;
+
+    const update = () => {
+      if (!subtitle.isConnected) return;
+      const copy = subtitle.querySelector(".header-subtitle-copy");
+      const clone = subtitle.querySelector(".header-subtitle-clone");
+      const text = copy?.textContent || "";
+      subtitle.title = text;
+      subtitle.setAttribute("aria-label", text);
+      const textWidth = copy?.getBoundingClientRect().width || 0;
+      const shouldScroll = textWidth > subtitle.clientWidth + 1;
+      subtitle.classList.toggle("is-scrolling", shouldScroll);
+      if (!shouldScroll) {
+        if (clone) clone.textContent = "";
+        subtitle.style.removeProperty("--subtitle-distance");
+        subtitle.style.removeProperty("--subtitle-duration");
+        return;
+      }
+
+      const distance = textWidth + 28;
+      if (clone) clone.textContent = text;
+      subtitle.style.setProperty("--subtitle-distance", `${-distance}px`);
+      subtitle.style.setProperty("--subtitle-duration", `${Math.max(8, distance / 30)}s`);
+    };
+
+    if (typeof ResizeObserver !== "undefined") {
+      this._subtitleObserver = new ResizeObserver(update);
+      this._subtitleObserver.observe(subtitle);
+    }
+    const schedule = typeof requestAnimationFrame === "function"
+      ? requestAnimationFrame
+      : (callback) => setTimeout(callback, 0);
+    schedule(update);
+  }
+
+  _blindAveragePosition(bundle) {
+    const positions = [...new Set(this._activeBlindIds(bundle))]
+      .map((entityId) => this._position(this._hass?.states?.[entityId]))
+      .filter((position) => position !== null);
+    if (positions.length) {
+      return Math.round(positions.reduce((sum, position) => sum + position, 0) / positions.length);
+    }
+    return this._position(this._state(bundle, "blinds"));
+  }
+
+  _blindMajorityIcon(bundle) {
+    const positions = [...new Set(this._activeBlindIds(bundle))]
+      .map((entityId) => this._position(this._hass?.states?.[entityId]))
+      .filter((position) => position !== null);
+    const open = positions.filter((position) => position >= 50);
+    const closed = positions.filter((position) => position < 50);
+    const majority = open.length > closed.length
+      ? open
+      : closed.length > open.length
+        ? closed
+        : positions;
+    const representative = majority.length
+      ? majority.reduce((sum, position) => sum + position, 0) / majority.length
+      : 50;
+    const step = Math.max(0, Math.min(100, Math.round(representative / 25) * 25));
+    const isEnglish = languageFor(this._hass) === "en";
+    let label;
+    if (!positions.length) {
+      label = isEnglish ? "No active blinds" : "Нет активных штор";
+    } else if (open.length > closed.length) {
+      label = isEnglish
+        ? `Most active blinds are open; about ${step}% (${open.length} of ${positions.length})`
+        : `Большинство активных штор открыто; около ${step}% (${open.length} из ${positions.length})`;
+    } else if (closed.length > open.length) {
+      label = isEnglish
+        ? `Most active blinds are closed; about ${step}% (${closed.length} of ${positions.length})`
+        : `Большинство активных штор закрыто; около ${step}% (${closed.length} из ${positions.length})`;
+    } else {
+      label = isEnglish
+        ? `Open and closed blinds are evenly split; average about ${step}%`
+        : `Открытых и закрытых поровну; среднее положение около ${step}%`;
+    }
+    return { icon: `orry:blind-${step}`, label };
+  }
+
   _render() {
     if (!this.shadowRoot) return;
+    this._subtitleObserver?.disconnect();
+    this._subtitleObserver = null;
     const bundle = this._bundle || this._resolveEntities();
     const t = (key) => this._text(key);
 
@@ -1348,6 +1538,7 @@ class OrryCard extends HTMLElement {
       return;
     }
 
+    const mode = this._config?.mode === "summary" ? "summary" : "full";
     if (!modules.some((module) => module.key === this._activeTab)) {
       const requested = this._config.default_tab;
       this._activeTab = modules.some((module) => module.key === requested)
@@ -1360,34 +1551,18 @@ class OrryCard extends HTMLElement {
       bundle.mainDevice?.name_by_user ||
       bundle.mainDevice?.name ||
       t("title");
-    const subtitle = modules.map((module) => module.title).join(" · ");
     const nextState = this._state(bundle, "next_action");
+    const lastAction = nextState?.attributes?.last_action;
+    const subtitle =
+      typeof lastAction === "string" && lastAction.trim()
+        ? lastAction.trim()
+        : modules.map((module) => module.title).join(" · ");
     const nextText = this._displayState(nextState, t("noActions"));
-
-    this.shadowRoot.innerHTML = `
-      <style>${CARD_STYLES}</style>
-      <ha-card>
-        <div class="header">
-          <div class="header-left">
-            <div class="header-icon">${icon("greenhouse")}</div>
-            <div class="header-titles">
-              <div class="header-title">${escapeHtml(title)}</div>
-              <div class="header-subtitle">${escapeHtml(subtitle || t("subtitle"))}</div>
-            </div>
-          </div>
-          <div class="next-pill clickable" data-more-info="${escapeHtml(bundle.ids.next_action || bundle.anchorId)}" title="${escapeHtml(nextText)}">
-            ${icon("next")}<span><b>${escapeHtml(t("nextAction"))}:</b> ${escapeHtml(nextText)}</span>
-          </div>
-        </div>
-
-        <div class="kpi-grid module-count-${modules.length}" style="--module-count:${modules.length}">
-          ${modules.map((module) => this._renderKpi(module, bundle)).join("")}
-        </div>
-
+    const detailedPanels = mode === "full"
+      ? `
         <div class="tabs-bar" style="--module-count:${modules.length}">
-          ${modules.map((module) => this._renderTab(module, bundle)).join("")}
+          ${modules.map((module) => this._renderTab(module)).join("")}
         </div>
-
         ${modules
           .map((module) => {
             const body =
@@ -1399,62 +1574,135 @@ class OrryCard extends HTMLElement {
             return `<section class="panel ${module.key === this._activeTab ? "active" : ""}" data-panel="${module.key}">${body}</section>`;
           })
           .join("")}
+      `
+      : "";
+
+    this.shadowRoot.innerHTML = `
+      <style>${CARD_STYLES}</style>
+      <ha-card class="${mode === "summary" ? "summary-mode" : "full-mode"}">
+        <div class="header">
+          <div class="header-left">
+            <div class="header-icon">${icon("greenhouse")}</div>
+            <div class="header-titles">
+              <div class="header-title">${escapeHtml(title)}</div>
+              <div class="header-subtitle" title="${escapeHtml(subtitle)}" aria-label="${escapeHtml(subtitle)}">
+                <span class="header-subtitle-track">
+                  <span class="header-subtitle-copy">${escapeHtml(subtitle || t("subtitle"))}</span>
+                  <span class="header-subtitle-copy header-subtitle-clone" aria-hidden="true"></span>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="next-pill clickable" data-more-info="${escapeHtml(bundle.ids.next_action || bundle.anchorId)}" title="${escapeHtml(nextText)}">
+            ${icon("next")}<span><b>${escapeHtml(t("nextAction"))}:</b> ${escapeHtml(nextText)}</span>
+          </div>
+        </div>
+
+        <div class="kpi-grid module-count-${modules.length}" style="--module-count:${modules.length}">
+          ${modules.map((module) => this._renderKpi(module, bundle)).join("")}
+        </div>
+
+        ${detailedPanels}
       </ha-card>
     `;
     this._bindEvents(bundle);
+    this._syncSubtitleMarquee();
   }
 
   _renderKpi(module, bundle) {
     const t = (key) => this._text(key);
-    let value = "—";
-    let sub = "";
-    let entityId = "";
+    const entityId = bundle.ids[module.key === "blinds" ? "blinds" : `${module.key}_status`] || "";
+    const infoEntityId = entityId || bundle.anchorId;
 
     if (module.key === "blinds") {
       const cover = this._state(bundle, "blinds");
-      const position = this._position(cover);
-      const status = this._state(bundle, "status");
-      value = position === null ? this._displayState(status) : `${position}%`;
-      sub = position === null ? t("averagePosition") : t("averagePosition");
-      entityId = bundle.ids.blinds || bundle.ids.status;
-    } else if (module.key === "phytolamp") {
+      const coverId = bundle.ids.blinds || "";
+      const activeIds = [...new Set(this._activeBlindIds(bundle))];
+      const allCount = this._allBlindIds(bundle).length;
+      const activeCount = activeIds.length;
+      const position = this._blindAveragePosition(bundle);
+      const errors = this._displayState(this._state(bundle, "error_count"), "0");
+      const positionText = position === null ? "—" : `${position}%`;
+      const positionLabel = `${t("averageActiveBlinds")}: ${positionText}`;
+      const iconInfo = this._blindMajorityIcon(bundle);
+      const totalLabel = `${t("totalDevices")}: ${allCount}`;
+      const activeLabel = `${t("activeBlinds")}: ${activeCount}`;
+      const errorLabel = `${t("errors")}: ${errors}`;
+      const accessibleCounts = languageFor(this._hass) === "en"
+        ? `${allCount} devices, ${activeCount} active blinds, ${errors} errors`
+        : `${allCount} устройств, ${activeCount} активных штор, ${errors} ошибок`;
+      const coverAvailable = Boolean(
+        coverId && cover && !isUnavailable(cover.state) && activeCount > 0 && position !== null
+      );
+      const value = position === null ? 0 : position;
+      return `
+        <div class="kpi-tile clickable" data-more-info="${escapeHtml(infoEntityId)}">
+          <div class="kpi-top">
+            <span>${escapeHtml(module.title)}</span>
+            <span class="kpi-state-icon" role="img" aria-label="${escapeHtml(iconInfo.label)}" title="${escapeHtml(iconInfo.label)}">${haIcon(iconInfo.icon)}</span>
+          </div>
+          <div class="kpi-main blinds-kpi-main">
+            <div class="blinds-summary-range">
+              <div class="blinds-range-fill" style="width:${value}%"></div>
+              <div class="blinds-range-thumb" style="left:${value}%"></div>
+              <input class="blinds-summary-range-input" type="range" min="0" max="100" step="1" value="${value}" data-action="set-position" data-entity="${escapeHtml(coverId)}" aria-label="${escapeHtml(t("setBlindPosition"))}" aria-valuetext="${escapeHtml(positionText)}" title="${escapeHtml(positionLabel)}" ${coverAvailable ? "" : "disabled"}>
+            </div>
+          </div>
+          <div class="kpi-sub blinds-kpi-sub blinds-kpi-counts" role="group" aria-label="${escapeHtml(accessibleCounts)}">
+            <span title="${escapeHtml(totalLabel)}">${allCount}</span><span aria-hidden="true"> / </span>
+            <span title="${escapeHtml(activeLabel)}">${activeCount}</span><span aria-hidden="true"> / </span>
+            <span title="${escapeHtml(errorLabel)}">${escapeHtml(errors)}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    if (module.key === "phytolamp") {
       const status = this._state(bundle, "phytolamp_status");
       const lights = this._lights(bundle);
       const onCount = lights.filter((item) => this._lightIsOn(item)).length;
-      value = this._displayState(status);
-      sub = lights.length
-        ? `${onCount} / ${lights.length} ${t("devices")}`
-        : t("lightingSummary");
-      entityId = bundle.ids.phytolamp_status;
-    } else {
-      const status = this._state(bundle, "watering_status");
-      const zones = this._wateringZones(bundle);
-      value = this._displayState(status);
-      sub = zones.length ? `${zones.length} ${t("zones")}` : t("wateringSchedule");
-      entityId = bundle.ids.watering_status;
+      const actionableLights = lights.filter((item) => {
+        const lightId = String(item?.entity_id || "");
+        return lightId && ["light", "switch"].includes(lightId.split(".")[0]) && this._lightIsAvailable(item);
+      });
+      const anyOn = onCount > 0;
+      const countLabel = `${t("totalDevices")}: ${lights.length}, ${t("enabledDevices")}: ${onCount}`;
+      const buttonLabel = t(anyOn ? "turnLightingOff" : "turnLightingOn");
+      const pressed = onCount === 0 ? "false" : onCount === lights.length ? "true" : "mixed";
+      return `
+        <div class="kpi-tile clickable" data-more-info="${escapeHtml(infoEntityId)}">
+          <div class="kpi-top"><span>${escapeHtml(module.title)}</span>${haIcon("orry:phytolamp")}</div>
+          <div class="kpi-main lighting-kpi-main" aria-hidden="true">${escapeHtml(this._displayState(status))}</div>
+          <div class="kpi-sub lighting-kpi-footer">
+            <span class="lighting-kpi-counts" role="img" aria-label="${escapeHtml(countLabel)}" title="${escapeHtml(countLabel)}">${lights.length} / ${onCount}</span>
+            <button class="lighting-kpi-button ${anyOn ? "is-on" : ""}" type="button" data-action="toggle-kpi-lights" aria-label="${escapeHtml(buttonLabel)}" aria-pressed="${pressed}" title="${escapeHtml(buttonLabel)}" ${actionableLights.length ? "" : "disabled"}>${haIcon("mdi:lightbulb-outline")}</button>
+          </div>
+        </div>
+      `;
     }
 
+    const status = this._state(bundle, "watering_status");
+    const zones = this._wateringZones(bundle);
+    const value = this._displayState(status);
+    const sub = zones.length ? `${zones.length} ${t("zones")}` : t("wateringSchedule");
     return `
-      <div class="kpi-tile clickable" data-more-info="${escapeHtml(entityId)}">
-        <div class="kpi-top"><span>${escapeHtml(module.title)}</span>${icon(module.icon)}</div>
+      <div class="kpi-tile clickable" data-more-info="${escapeHtml(infoEntityId)}">
+        <div class="kpi-top"><span>${escapeHtml(module.title)}</span>${haIcon("orry:watering")}</div>
         <div class="kpi-main" title="${escapeHtml(value)}">${escapeHtml(value)}</div>
         <div class="kpi-sub" title="${escapeHtml(sub)}">${escapeHtml(sub)}</div>
       </div>
     `;
   }
 
-  _renderTab(module, bundle) {
-    let count = 0;
-    if (module.key === "blinds") {
-      count = this._allBlindIds(bundle).length;
-    } else if (module.key === "phytolamp") {
-      count = this._lights(bundle).length;
-    } else {
-      count = this._wateringZones(bundle).length;
-    }
+  _renderTab(module) {
+    const icons = {
+      blinds: "orry:blind-50",
+      phytolamp: "orry:phytolamp",
+      watering: "orry:watering",
+    };
     return `
       <button class="tab-btn ${module.key === this._activeTab ? "active" : ""}" data-action="switch-tab" data-tab="${module.key}">
-        ${icon(module.icon)}<span>${escapeHtml(module.title)}</span>${count ? `<span class="tab-badge">${count}</span>` : ""}
+        ${haIcon(icons[module.key])}<span>${escapeHtml(module.title)}</span>
       </button>
     `;
   }
@@ -1492,21 +1740,14 @@ class OrryCard extends HTMLElement {
   }
 
   _blindIcon(entityId, state, position) {
-    const metaIcon = this._hass?.entities?.[entityId]?.icon;
-    const entityIcon = metaIcon || state?.attributes?.icon;
-    if (entityIcon) return haIcon(entityIcon);
-    if (position !== null) {
-      const step = Math.max(0, Math.min(100, Math.round(position / 25) * 25));
-      return haIcon(`orry:blind-${step}`) || icon("blinds");
-    }
-    return icon("blinds");
+    const step = position === null
+      ? 50
+      : Math.max(0, Math.min(100, Math.round(position / 25) * 25));
+    return haIcon(`orry:blind-${step}`);
   }
 
   _renderBlindsPanel(bundle) {
     const t = (key) => this._text(key);
-    const coverId = bundle.ids.blinds;
-    const cover = this._state(bundle, "blinds");
-    const pos = this._position(cover);
     const allBlinds = this._allBlindIds(bundle);
     const activeIds = new Set(this._activeBlindIds(bundle));
     const workSelectId = bundle.ids.excluded_blinds || "";
@@ -1525,11 +1766,6 @@ class OrryCard extends HTMLElement {
     );
     const workOptions = workAttrs.option_by_blind || {};
     const sunOptions = sunAttrs.option_by_blind || {};
-    const excluded = allBlinds.filter((entityId) => !activeIds.has(entityId));
-    const openCount = this._displayState(this._state(bundle, "open_count"), "0");
-    const errors = this._displayState(this._state(bundle, "error_count"), "0");
-    const summary = `${openCount} ${t("activeDrives")} · ${errors} ${t("errors")}`;
-    const coverAvailable = Boolean(coverId && cover && !isUnavailable(cover.state));
 
     const indicatorMode = ["position", "battery"].includes(this._config?.drive_indicator)
       ? this._config.drive_indicator
@@ -1584,9 +1820,11 @@ class OrryCard extends HTMLElement {
             </div>
             <label class="drive-checkbox-cell drive-sun-cell" title="${escapeHtml(t("sunProtection"))}">
               <input class="drive-checkbox" type="checkbox" data-action="drive-sun-toggle" data-entity="${escapeHtml(sunSelectId)}" data-option="${escapeHtml(sunOption)}" aria-label="${escapeHtml(`${name}: ${t("sunProtection")}`)}" ${sunChecked ? "checked" : ""} ${sunAvailable ? "" : "disabled"}>
+              <span class="drive-checkbox-visual" aria-hidden="true"><span class="checkbox-empty">${haIcon("mdi:checkbox-blank-outline")}</span><span class="checkbox-marked">${haIcon("mdi:checkbox-marked-outline")}</span></span>
             </label>
             <label class="drive-checkbox-cell drive-work-cell" title="${escapeHtml(t("driveEnabled"))}">
               <input class="drive-checkbox" type="checkbox" data-action="drive-work-toggle" data-entity="${escapeHtml(workSelectId)}" data-option="${escapeHtml(workOption)}" aria-label="${escapeHtml(`${name}: ${t("driveEnabled")}`)}" ${isWorking ? "checked" : ""} ${workAvailable ? "" : "disabled"}>
+              <span class="drive-checkbox-visual" aria-hidden="true"><span class="checkbox-empty">${haIcon("mdi:checkbox-blank-outline")}</span><span class="checkbox-marked">${haIcon("mdi:checkbox-marked-outline")}</span></span>
             </label>
           </div>
         `;
@@ -1594,17 +1832,7 @@ class OrryCard extends HTMLElement {
       .join("");
 
     return `
-      <div class="subbar"><span><strong>${escapeHtml(t("groupControl"))}</strong></span><span>${escapeHtml(summary)}${excluded.length ? ` · ${excluded.length} ${escapeHtml(t("excluded"))}` : ""}</span></div>
       <div class="content">
-        <div class="control-card">
-          <div class="control-heading"><span class="control-title">${escapeHtml(t("allBlinds"))}</span><span class="position-value">${pos === null ? "—" : `${pos}%`}</span></div>
-          <input class="position-slider" type="range" min="0" max="100" step="1" value="${pos === null ? 0 : pos}" data-action="set-position" data-entity="${escapeHtml(coverId)}" aria-label="${escapeHtml(t("averagePosition"))}" ${!coverAvailable || pos === null ? "disabled" : ""}>
-          <div class="action-row">
-            <button class="action-btn" data-action="cover-service" data-service="open_cover" data-entity="${escapeHtml(coverId)}" ${!coverAvailable ? "disabled" : ""}>${icon("open")}<span>${escapeHtml(t("open"))}</span></button>
-            <button class="action-btn" data-action="cover-service" data-service="stop_cover" data-entity="${escapeHtml(coverId)}" ${!coverAvailable ? "disabled" : ""}>${icon("pause")}<span>${escapeHtml(t("stop"))}</span></button>
-            <button class="action-btn" data-action="cover-service" data-service="close_cover" data-entity="${escapeHtml(coverId)}" ${!coverAvailable ? "disabled" : ""}>${icon("close")}<span>${escapeHtml(t("close"))}</span></button>
-          </div>
-        </div>
         <div class="drive-list">
           <div class="drive-list-heading" aria-label="${escapeHtml(t("drivePositions"))}">
             <span></span><span></span>
@@ -1780,16 +2008,16 @@ class OrryCard extends HTMLElement {
       });
     });
 
-    root.querySelectorAll("[data-action='cover-service']").forEach((button) => {
-      button.addEventListener("click", (event) => {
-        event.stopPropagation();
-        const entityId = button.getAttribute("data-entity");
-        const service = button.getAttribute("data-service");
-        if (entityId && service) this._callService("cover", service, { entity_id: entityId });
-      });
-    });
-
     root.querySelectorAll("[data-action='set-position']").forEach((slider) => {
+      slider.addEventListener("input", () => {
+        const position = Math.max(0, Math.min(100, Math.round(Number(slider.value) || 0)));
+        const range = slider.closest(".blinds-summary-range");
+        const fill = range?.querySelector(".blinds-range-fill");
+        const thumb = range?.querySelector(".blinds-range-thumb");
+        if (fill) fill.style.width = `${position}%`;
+        if (thumb) thumb.style.left = `${position}%`;
+        slider.setAttribute("aria-valuetext", `${position}%`);
+      });
       slider.addEventListener("change", () => {
         const entityId = slider.getAttribute("data-entity");
         const position = Number(slider.value);
@@ -1812,6 +2040,21 @@ class OrryCard extends HTMLElement {
         if (!["light", "switch"].includes(domain)) return;
         const service = state.state === "on" ? "turn_off" : "turn_on";
         this._callService(domain, service, { entity_id: entityId });
+      });
+    });
+
+    root.querySelectorAll("[data-action='toggle-kpi-lights']").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const lights = this._lights(bundle);
+        const targetOn = !lights.some((item) => this._lightIsOn(item));
+        for (const item of lights) {
+          const entityId = String(item?.entity_id || "");
+          const domain = entityId.split(".")[0];
+          if (!entityId || !["light", "switch"].includes(domain) || !this._lightIsAvailable(item)) continue;
+          if (this._lightIsOn(item) === targetOn) continue;
+          this._callService(domain, targetOn ? "turn_on" : "turn_off", { entity_id: entityId });
+        }
       });
     });
 
@@ -1919,8 +2162,8 @@ if (typeof window !== "undefined") {
   if (!window.customCards.some((item) => item.type === CARD_TYPE)) {
     window.customCards.push({
       type: CARD_TYPE,
-      name: "Домашняя оранжерея — Полная карточка",
-      description: "Сводка штор, подсветки и полива с вкладками и управлением.",
+      name: "Домашняя оранжерея — Карточка Orry",
+      description: "Полный и краткий режимы; сводка штор, подсветки и полива.",
       preview: true,
       documentationURL: "https://github.com/S0ft0r/ha-orangeai",
     });

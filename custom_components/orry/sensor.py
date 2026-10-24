@@ -11,6 +11,7 @@ from homeassistant.const import EntityCategory, PERCENTAGE
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.event import async_call_later, async_track_state_change_event
 
 from .const import (
@@ -260,18 +261,53 @@ class LoggiaStatusSensor(LoggiaBaseSensor):
             self._debounce_unsub = None
 
 
-class LoggiaNextActionSensor(LoggiaBaseSensor):
-    """Сенсор следующего автоматического действия по всем активным модулям."""
+class LoggiaNextActionSensor(LoggiaBaseSensor, RestoreEntity):
+    """Сенсор следующего действия и последнего подтверждённого действия интеграции."""
 
     def __init__(self, manager: LoggiaManager):
         super().__init__(manager, "next_action")
         self._action_attrs: dict[str, str] = {}
+        self._last_action: str | None = None
+        self._last_action_at: str | None = None
         manager.set_next_action_sensor(self)
 
+    async def async_added_to_hass(self) -> None:
+        """Восстановить последнее реальное действие после перезапуска Home Assistant."""
+        await super().async_added_to_hass()
+        last_state = await self.async_get_last_state()
+        if last_state is not None:
+            restored_action = last_state.attributes.get("last_action")
+            restored_time = last_state.attributes.get("last_action_at")
+            if (
+                self._last_action is None
+                and isinstance(restored_action, str)
+                and restored_action.strip()
+            ):
+                self._last_action = restored_action
+            if (
+                self._last_action_at is None
+                and isinstance(restored_time, str)
+                and restored_time.strip()
+            ):
+                self._last_action_at = restored_time
+        self.async_write_ha_state()
+
     @property
-    def extra_state_attributes(self) -> dict[str, str]:
-        """Следующее действие по каждому из трёх модулей (без указания названия модуля)."""
-        return dict(self._action_attrs)
+    def extra_state_attributes(self) -> dict[str, object]:
+        """Расписание модулей и неизменяемые при пересчёте атрибуты последнего действия."""
+        attributes: dict[str, object] = dict(self._action_attrs)
+        if self._last_action is not None:
+            attributes["last_action"] = self._last_action
+        if self._last_action_at is not None:
+            attributes["last_action_at"] = self._last_action_at
+        return attributes
+
+    def set_last_action(self, action_text: str, happened_at: str) -> None:
+        """Сохранить результат фактически выполненного действия и обновить атрибуты сенсора."""
+        self._last_action = action_text
+        self._last_action_at = happened_at
+        if self.hass is not None:
+            self.async_write_ha_state()
 
     def update_state(
         self, state_text: str, action_attrs: dict[str, str] | None = None

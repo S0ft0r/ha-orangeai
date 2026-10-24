@@ -650,6 +650,12 @@
           },
           "watering_action": {
             "name": "Полив"
+          },
+          "last_action": {
+            "name": "Последнее действие"
+          },
+          "last_action_at": {
+            "name": "Время последнего действия"
           }
         }
       },
@@ -1068,6 +1074,13 @@
     "logbook_name_battery": "Питание устройств",
     "notify_title_battery": "Низкий заряд батареи",
     "log_low_battery": "Низкий заряд батареи (< {threshold}%): {devices}",
-    "tts_low_battery": "Внимание! Низкий заряд батареи: {devices}"
+    "tts_low_battery": "Внимание! Низкий заряд батареи: {devices}",
+    "last_blind_position": "Положение штор: {position}% ({succeeded}/{total})",
+    "last_blinds_stop": "Движение штор остановлено",
+    "last_phytolamp_on": "Подсветка включена ({succeeded}/{total})",
+    "last_phytolamp_off": "Подсветка выключена ({succeeded}/{total})",
+    "last_watering_on": "Полив начат: клапан «{name}» (задано {duration} с)",
+    "last_watering_stop": "Полив остановлен: закрыто {stopped} из {total} клапанов",
+    "last_watering_safety_cutoff": "Защитное отключение полива: клапан «{name}» закрыт"
   }
 }

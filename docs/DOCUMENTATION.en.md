@@ -1,7 +1,7 @@
 # Home Orangery — Modular Blind, Plant Lighting & Watering Controller for Home Assistant
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![Version](https://img.shields.io/badge/version-0.1.24-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
+[![Version](https://img.shields.io/badge/version-0.1.24.2-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.8.0%2B-41BDF5.svg)](https://www.home-assistant.io/)
 [![Manufacturer](https://img.shields.io/badge/manufacturer-OrangeAI-purple.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Author](https://img.shields.io/badge/author-%40S0ft0r-orange.svg)](https://github.com/S0ft0r)
@@ -10,7 +10,7 @@
 
 [Short README overview](../README.en.md) · [Open the interactive Lovelace YAML builder](https://html-preview.github.io/?url=https://github.com/S0ft0r/ha-orangeai/blob/main/docs/orry-builder.html)
 
-> **Version:** 0.1.24  
+> **Version:** 0.1.24.2  
 > **Manufacturer:** `OrangeAI`  
 > **Author:** [Softor (@S0ft0r)](https://github.com/S0ft0r)
 
@@ -80,9 +80,9 @@ After installation, use the official badge to start setup, or go to **Settings �
 
 ## Custom Lovelace Card
 
-The integration includes a full `custom:orry-card` in a Home Assistant style: a header, summary tiles, and tabs for the enabled **Blinds**, **Lighting**, and **Watering** modules. The tabs provide grouped blind controls, configured light controls, auto-watering switches, a schedule summary, and manual dosed watering. The visible tabs are determined by enabled modules; there is no separate `mode` option.
+The integration includes a Home Assistant-style `custom:orry-card` with `mode: full` and `mode: summary`. Both modes share the same header, header state line, and summary tiles for the enabled **Blinds**, **Lighting**, and **Watering** modules. Full mode additionally shows detailed tabs for configured lights, auto-watering, schedule information, and manual dosed watering; summary mode shows only the header and KPI tiles. Visible tiles and tabs are determined automatically by enabled modules. After the first verified integration action, the subtitle uses the **Next** sensor's `last_action` attribute (localized text with local time); until then it falls back to enabled module names. `last_action_at` contains the event's ISO timestamp. The last action survives schedule refreshes and is restored after a Home Assistant restart; builder demo history is never used.
 
-The drive list includes every configured drive, including those excluded from automation. The **Sun protection** checkbox is connected to the new `blinds_for_protect` select entity, which is created when the sun-protection module is enabled and can be changed live without reloading the integration. If protection is already active, newly selected drives are closed immediately and deselected drives are opened. The **In work** checkbox updates the existing `excluded_blinds` select. Excluded rows are dimmed and hatched except for the final work-checkbox cell. The position/battery indicator uses the available row width; the numeric position can be toggled independently. Drive icons use Home Assistant entity settings when configured, otherwise they change with the current position. No separate “Drives” heading is shown. The card always uses the Home Assistant theme.
+The blinds tile includes a position slider for the active group and `total / active / errors` counters; there is no separate aggregate blind-control panel. In full mode, the drive list includes every configured drive, including those excluded from automation. The **Sun protection** checkbox is connected to the `blinds_for_protect` select entity, which is created when the sun-protection module is enabled and can be changed live without reloading the integration. If protection is already active, newly selected drives are closed immediately and deselected drives are opened. The **In work** checkbox updates the existing `excluded_blinds` select. Excluded rows are dimmed and hatched except for the final work-checkbox cell. The position/battery indicator uses the available row width; the numeric position can be toggled independently. Drive icons use the position-aware Orry icons `orry:blind-0/25/50/75/100`. No separate “Drives” heading is shown. The card always uses the Home Assistant theme.
 
 - In Lovelace **Storage** mode the card resource is registered automatically; in YAML mode the integration loads the JS module through the frontend. Do not add the resource manually.
 - In the visual editor, select the main device's **Next** sensor for the desired Orry configuration. The card discovers related entities on the main device and its sub-devices.
@@ -98,6 +98,7 @@ views:
     path: orangery
     cards:
       - type: custom:orry-card
+        mode: full
         entity: sensor.orangery_next_action
         default_tab: watering
         drive_indicator: position
@@ -110,18 +111,19 @@ The `entity` value above is an example. Replace `sensor.orangery_next_action` wi
 | Option | Required? | Allowed values and purpose |
 | :--- | :--- | :--- |
 | `type` | Yes | Always `custom:orry-card`. |
+| `mode` | No; defaults to `full` | `full` shows summary tiles and detailed tabs; `summary` keeps the same header, state line, and tiles without tabs. |
 | `entity` | Required in the visual editor; recommended in YAML | Entity ID of the main device's **Next** sensor for the selected configuration. With one configuration the card can try to find it automatically; with multiple configurations, set `entity` explicitly on each card. |
-| `default_tab` | No; defaults to `blinds` | Initial tab: `blinds`, `phytolamp` (lighting), or `watering`. If that module is disabled, the first available tab opens. |
-| `drive_indicator` | No; if omitted, no bar is shown | `position` shows a blue shutter-position bar; `battery` shows a battery bar (green at 45%+, yellow 35–44%, orange 15–34%, red below 15%); `none` hides the bar. |
-| `show_position_percent` | No; defaults to `true` | Shows the numeric shutter position independently of the bar mode; it always represents shutter position, not battery charge. |
+| `default_tab` | No; defaults to `blinds` | Initial tab in `full` mode: `blinds`, `phytolamp` (lighting), or `watering`. If that module is disabled, the first available tab opens; ignored in `summary`. |
+| `drive_indicator` | No; if omitted, no bar is shown | Applies to the detailed drive list in `full` mode: `position` shows a blue shutter-position bar; `battery` shows a battery bar (green at 45%+, yellow 35–44%, orange 15–34%, red below 15%); `none` hides the bar. |
+| `show_position_percent` | No; defaults to `true` | In `full` mode, shows the numeric shutter position in the detailed list independently of the bar mode; it always represents shutter position, not battery charge. |
 | `title` | No | Custom card title. If omitted, the main Orry device name is used. |
-| `switch_icon` | No | A Home Assistant icon (for example, `mdi:power`) that replaces the standard toggle for the lighting and watering switches. If omitted, the standard toggle is shown. |
+| `switch_icon` | No | In `full` mode, a Home Assistant icon (for example, `mdi:power`) replaces the standard toggle in the detailed lighting and watering controls. If omitted, the standard toggle is shown. |
 
-Disabled modules are hidden automatically, so each card shows only the tabs active for its Orry configuration.
+Disabled modules are hidden automatically: each card shows only its active KPI tiles and, in `full` mode, the corresponding tabs.
 
 ## Key Features
 
-- **Full Lovelace card (`custom:orry-card`)**: overview of enabled modules and controls for blinds, lighting, and watering in one card.
+- **Lovelace card (`custom:orry-card`)**: `full` mode with detailed tabs and `summary` mode with the same KPI tiles but no tabs; shared header and state line across modes.
 - **Modular Architecture**:
   - The first setup screen lets you pick only the orangery modules you need: **Enable blind control**, **Enable plant lighting**, and **Enable plant watering** (at least one module is required), plus a separate global toggle **Enable error logging**.
   - Each module creates only its own sub-devices and entities; disabling a module automatically removes its unused sub-devices and entities.
@@ -250,7 +252,7 @@ Summary state sensors are placed on the **main `Orangery` device**, while diagno
 
 | Control | Device | Card Section | Description |
 |---|---|---|---|
-| **Next** | `Orangery` *(Main)* | Sensors | Nearest scheduled action across all active modules (*Blinds will open at HH:MM*, *Blinds will close at HH:MM*, *Lighting will turn on at HH:MM*, *Lighting will turn off at HH:MM*, or *Watering will start at HH:MM*), with per-module `blind_action`, `light_action`, and `watering_action` attributes created only for enabled modules |
+| **Next** | `Orangery` *(Main)* | Sensors | Nearest scheduled action across all active modules (*Blinds will open at HH:MM*, *Blinds will close at HH:MM*, *Lighting will turn on at HH:MM*, *Lighting will turn off at HH:MM*, or *Watering will start at HH:MM*), with per-module `blind_action`, `light_action`, and `watering_action` attributes created only for enabled modules. After verified commands it also exposes `last_action` (text plus local time) and `last_action_at` (ISO timestamp) |
 | **Blinds** | `Orangery` *(Main)* | Sensors | Summary text of active blinds (*All fully open*, *All fully open except N*, *All fully closed*, *All fully closed except N*, *No active blinds*, or *Not configured*). Updates with a **1.5-second debounce** and exposes individual blind positions and `failed_blinds` in its attributes |
 | **Lighting** | `Orangery` *(Main)* | Sensors | Summary status of plant lighting (*On*, *Off*, *On (N of M)*, or *Not configured*) with individual lamp states in attributes |
 | **Watering** | `Orangery` *(Main)* | Sensors | Current irrigation state: *Scheduled (08:00, 20:00)*, *Watering: [Valve Name]*, *Skip next watering*, *No active zones*, *Disabled*, or *Not configured*. Attributes include a live summary of all zones |

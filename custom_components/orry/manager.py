@@ -128,6 +128,23 @@ class LoggiaManager:
         self._next_action_sensor = sensor
         self.update_next_action_text()
 
+    def record_last_action(
+        self, action_key: str, when: datetime | None = None, **placeholders
+    ) -> None:
+        """Записать локализованное подтверждённое действие, не затрагивая расчёт расписания."""
+        if self._next_action_sensor is None:
+            return
+        happened_at = dt_util.as_local(when or dt_util.now())
+        action_text = self.tr_sensor_state(
+            "next_action", action_key, default="", **placeholders
+        )
+        if not action_text:
+            return
+        self._next_action_sensor.set_last_action(
+            f"{action_text} · {happened_at.strftime('%H:%M')}",
+            happened_at.isoformat(),
+        )
+
     def set_error_sensor(self, sensor):
         self._error_sensor = sensor
 
@@ -483,6 +500,7 @@ class LoggiaManager:
 
         self._command_seq += 1
         my_seq = self._command_seq
+        action_started_at = dt_util.now()
 
         if self._verify_task and not self._verify_task.done():
             self._verify_task.cancel()
@@ -507,7 +525,9 @@ class LoggiaManager:
         direction = "up" if position >= 50 else "down"
         self._verify_task = self.entry.async_create_background_task(
             self.hass,
-            self._async_verify_movement(blinds_to_move, position, movement_time, direction, my_seq),
+            self._async_verify_movement(
+                blinds_to_move, position, movement_time, direction, my_seq, action_started_at
+            ),
             "loggia_verify_movement",
         )
 
@@ -523,6 +543,7 @@ class LoggiaManager:
         if not target_blinds:
             return
         _LOGGER.info("%s", self.tr_log("log_stop", blinds=target_blinds))
+        action_started_at = dt_util.now()
         repeat_count = int(self.get_number("repeat_for", DEFAULT_REPEAT))
         for _ in range(repeat_count):
             await self.hass.services.async_call(
@@ -531,6 +552,7 @@ class LoggiaManager:
                 {"entity_id": target_blinds},
                 blocking=True,
             )
+        self.record_last_action("last_blinds_stop", when=action_started_at)
 
     async def async_execute_manual_action(self) -> None:
         """Выполнить выбранное в списке ручное действие для активных приводов и вернуть выбор на 'Остановить'."""
@@ -580,6 +602,7 @@ class LoggiaManager:
         delay_seconds: int,
         direction: str = "down",
         cmd_seq: int | None = None,
+        action_started_at: datetime | None = None,
     ):
         await asyncio.sleep(delay_seconds)
         if cmd_seq is not None and self._command_seq != cmd_seq:
@@ -623,6 +646,7 @@ class LoggiaManager:
 
         failed = []
         failed_ids = []
+        checked_count = 0
         tolerance = max(5, repeat_tol)
         excluded = self.excluded_blinds
 
@@ -630,6 +654,7 @@ class LoggiaManager:
         for blind in blinds_list:
             if blind in excluded:
                 continue
+            checked_count += 1
             state = self.hass.states.get(blind)
             if not state:
                 failed.append(blind)
@@ -650,6 +675,16 @@ class LoggiaManager:
         if self._status_sensor:
             self._status_sensor.set_failed_blinds(failed)
         self._sync_repair_issues()
+
+        succeeded_count = max(0, checked_count - len(failed_ids))
+        if succeeded_count:
+            self.record_last_action(
+                "last_blind_position",
+                when=action_started_at,
+                position=target_position,
+                succeeded=succeeded_count,
+                total=checked_count,
+            )
 
         if failed:
             await self._async_handle_error(failed, target_position, direction)
@@ -1154,6 +1189,7 @@ class LoggiaManager:
             self._phytolamp_verify_unsub()
             self._phytolamp_verify_unsub = None
 
+        action_started_at = dt_util.now()
         call_failed = False
         try:
             await self.hass.services.async_call(
@@ -1174,14 +1210,22 @@ class LoggiaManager:
             self._phytolamp_verify_unsub = None
             prev_failed = set(self._failed_phytolamps)
             failed: set[str] = set()
-            for lamp_id in self.phytolamps:
+            for lamp_id in lamps:
                 st = self.hass.states.get(lamp_id)
                 if not st or st.state != expected:
                     failed.add(lamp_id)
             self._failed_phytolamps = failed
             self._refresh_phytolamp_sensors()
+            succeeded_count = len(lamps) - len(failed)
+            if not call_failed and succeeded_count:
+                self.record_last_action(
+                    "last_phytolamp_on" if turn_on else "last_phytolamp_off",
+                    when=action_started_at,
+                    succeeded=succeeded_count,
+                    total=len(lamps),
+                )
             newly_failed = [
-                lid for lid in self.phytolamps if lid in failed and lid not in prev_failed
+                lid for lid in lamps if lid in failed and lid not in prev_failed
             ]
             if newly_failed and self.has_mode(MODE_LOGGING):
                 self.entry.async_create_background_task(
@@ -2915,6 +2959,7 @@ class LoggiaManager:
                         timeout=timeout_sec,
                     ),
                 )
+                cutoff_call_failed = False
                 try:
                     await self.hass.services.async_call(
                         "homeassistant",
@@ -2923,6 +2968,7 @@ class LoggiaManager:
                         blocking=True,
                     )
                 except Exception as err:
+                    cutoff_call_failed = True
                     self._failed_watering_valves.add(valve_id)
                     _LOGGER.error(
                         "%s",
@@ -2936,6 +2982,11 @@ class LoggiaManager:
                 st_after = self.hass.states.get(valve_id)
                 if not st_after or st_after.state != "off":
                     self._failed_watering_valves.add(valve_id)
+                elif not cutoff_call_failed:
+                    valve_name = st_after.name or valve_id
+                    self.record_last_action(
+                        "last_watering_safety_cutoff", name=valve_name
+                    )
                 self._refresh_watering_sensors()
                 if self.has_mode(MODE_LOGGING):
                     await self._async_handle_watering_valve_error(
@@ -2959,6 +3010,12 @@ class LoggiaManager:
 
     async def async_stop_watering(self) -> None:
         """Экстренная остановка активного полива и закрытие всех клапанов."""
+        active_valves_before = [
+            valve_id
+            for valve_id in self.watering_valves
+            if (state := self.hass.states.get(valve_id)) is not None
+            and state.state == "on"
+        ]
         _LOGGER.info("%s", self.tr_log("log_watering_manual_stop"))
         if self._watering_task and not self._watering_task.done():
             self._watering_task.cancel()
@@ -2997,6 +3054,18 @@ class LoggiaManager:
                         ),
                     )
         self._refresh_watering_sensors()
+        closed_count = sum(
+            1
+            for valve_id in active_valves_before
+            if (state := self.hass.states.get(valve_id)) is not None
+            and state.state == "off"
+        )
+        if closed_count:
+            self.record_last_action(
+                "last_watering_stop",
+                stopped=closed_count,
+                total=len(active_valves_before),
+            )
         if newly_failed_valves and self.has_mode(MODE_LOGGING):
             await self._async_handle_watering_valve_error(newly_failed_valves)
 
@@ -3076,6 +3145,12 @@ class LoggiaManager:
             else:
                 turn_on_ok = True
                 self._failed_watering_valves.discard(valve_id)
+                valve_name = valve_st_after.name or valve_id
+                self.record_last_action(
+                    "last_watering_on",
+                    name=valve_name,
+                    duration=duration,
+                )
                 self._refresh_watering_sensors()
             remaining = max(0.0, duration - check_wait)
             if remaining > 0:

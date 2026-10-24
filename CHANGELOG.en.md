@@ -7,6 +7,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.1.24.2] — 2026-10-24
+
+### Added
+- **The production card now supports `mode: full` and `mode: summary`.** Summary keeps the same header, state line, and KPI tiles as full mode while hiding tabs and detailed panels.
+- Moved the blind-position slider and compact `total / active / errors` counters into the blinds KPI; removed the separate aggregate blind-control block while retaining per-drive sun-protection and work checkboxes.
+- Added Orry blind, lighting, and watering icons to the card tabs/summary, MDI checkbox visuals, a lighting KPI toggle, and accessible counter labels/tooltips.
+- Long header subtitles now scroll. The Next sensor creates `last_action` only after verified blind, lighting, or watering actions; it includes local time, survives schedule refreshes, and is restored after a restart. The machine-readable ISO timestamp is exposed as `last_action_at`; before the first action, the card falls back to enabled module names and never uses builder demo data.
+
+### Changed
+- Synchronized the integration and frontend card version to `0.1.24.2`.
+
+---
+
 ## [0.1.24.1] — 2026-10-24
 
 ### Fixed

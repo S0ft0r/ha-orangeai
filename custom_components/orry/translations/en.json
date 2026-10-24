@@ -650,6 +650,12 @@
           },
           "watering_action": {
             "name": "Watering"
+          },
+          "last_action": {
+            "name": "Last action"
+          },
+          "last_action_at": {
+            "name": "Last action time"
           }
         }
       },
@@ -1068,6 +1074,13 @@
     "logbook_name_battery": "Device battery",
     "notify_title_battery": "Low battery warning",
     "log_low_battery": "Low battery level (< {threshold}%): {devices}",
-    "tts_low_battery": "Warning! Low battery level: {devices}"
+    "tts_low_battery": "Warning! Low battery level: {devices}",
+    "last_blind_position": "Blind position set to {position}% ({succeeded}/{total})",
+    "last_blinds_stop": "Blind movement stopped",
+    "last_phytolamp_on": "Lighting turned on ({succeeded}/{total})",
+    "last_phytolamp_off": "Lighting turned off ({succeeded}/{total})",
+    "last_watering_on": "Watering started: valve “{name}” (requested {duration} s)",
+    "last_watering_stop": "Watering stopped: {stopped} of {total} valves closed",
+    "last_watering_safety_cutoff": "Watering safety cutoff: valve “{name}” closed"
   }
 }
