@@ -115,8 +115,12 @@ class LoggiaGroupCover(CoverEntity):
         """Список активных штор и их индивидуальные позиции."""
         targets = self._target_blinds
         attrs: dict[str, Any] = {
+            "all_blinds": list(self.manager.all_blinds),
             "active_blinds": list(targets),
-            "excluded_blinds": list(self.manager.excluded_blinds),
+            "excluded_blinds": [
+                blind for blind in self.manager.all_blinds
+                if blind in self.manager.excluded_blinds
+            ],
         }
         for blind in targets:
             st = self.hass.states.get(blind) if self.hass else None

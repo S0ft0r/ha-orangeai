@@ -237,6 +237,7 @@ ENTITY_GROUP: dict[str, str] = {
     # привода (управление, настройки и диагностика штор)
     "blinds": "drives",
     "sun_blinds": "drives",
+    "blinds_for_protect": "drives",
     "up_limit": "drives",
     "down_limit": "drives",
     "repeat_for": "drives",

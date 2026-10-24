@@ -1,16 +1,16 @@
 # Home Orangery — Modular Blind, Plant Lighting & Watering Controller for Home Assistant
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![Version](https://img.shields.io/badge/version-0.1.23-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
+[![Version](https://img.shields.io/badge/version-0.1.24-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.8.0%2B-41BDF5.svg)](https://www.home-assistant.io/)
 [![Manufacturer](https://img.shields.io/badge/manufacturer-OrangeAI-purple.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Author](https://img.shields.io/badge/author-%40S0ft0r-orange.svg)](https://github.com/S0ft0r)
 
 🌐 **Language:** [🇷🇺 Полная документация на русском (DOCUMENTATION.md)](DOCUMENTATION.md) | **🇬🇧 English**
 
-[Short README overview](../README.en.md) · [Interactive Lovelace YAML builder](https://html-preview.github.io/?url=https://github.com/S0ft0r/ha-orangeai/blob/main/docs/orry-builder.html)
+[Short README overview](../README.en.md) · [Open the interactive Lovelace YAML builder](https://html-preview.github.io/?url=https://github.com/S0ft0r/ha-orangeai/blob/main/docs/orry-builder.html)
 
-> **Version:** 0.1.23  
+> **Version:** 0.1.24  
 > **Manufacturer:** `OrangeAI`  
 > **Author:** [Softor (@S0ft0r)](https://github.com/S0ft0r)
 
@@ -81,6 +81,8 @@ After installation, use the official badge to start setup, or go to **Settings �
 ## Custom Lovelace Card
 
 The integration includes a full `custom:orry-card` in a Home Assistant style: a header, summary tiles, and tabs for the enabled **Blinds**, **Lighting**, and **Watering** modules. The tabs provide grouped blind controls, configured light controls, auto-watering switches, a schedule summary, and manual dosed watering. The visible tabs are determined by enabled modules; there is no separate `mode` option.
+
+The drive list includes every configured drive, including those excluded from automation. The **Sun protection** checkbox is connected to the new `blinds_for_protect` select entity, which is created when the sun-protection module is enabled and can be changed live without reloading the integration. If protection is already active, newly selected drives are closed immediately and deselected drives are opened. The **In work** checkbox updates the existing `excluded_blinds` select. Excluded rows are dimmed and hatched except for the final work-checkbox cell. The position/battery indicator uses the available row width; the numeric position can be toggled independently. Drive icons use Home Assistant entity settings when configured, otherwise they change with the current position. No separate “Drives” heading is shown. The card always uses the Home Assistant theme.
 
 - In Lovelace **Storage** mode the card resource is registered automatically; in YAML mode the integration loads the JS module through the frontend. Do not add the resource manually.
 - In the visual editor, select the main device's **Next** sensor for the desired Orry configuration. The card discovers related entities on the main device and its sub-devices.

@@ -403,6 +403,8 @@ class LoggiaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_sun_protect(self, user_input=None):
         if user_input is not None:
             user_input.setdefault("blinds_for_protect", [])
+            # Config flow retains its legacy default: an empty selection means all drives.
+            user_input["blinds_for_protect_explicit"] = False
             user_input = _apply_sun_protect_extras(user_input)
             self._data.update(user_input)
 
@@ -1243,6 +1245,8 @@ class LoggiaOptionsFlow(config_entries.OptionsFlow):
     async def async_step_sun_protect(self, user_input=None):
         if user_input is not None:
             user_input.setdefault("blinds_for_protect", [])
+            # Config flow retains its legacy default: an empty selection means all drives.
+            user_input["blinds_for_protect_explicit"] = False
             user_input = _apply_sun_protect_extras(user_input)
             self._options.update(user_input)
 

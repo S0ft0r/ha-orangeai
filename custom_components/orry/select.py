@@ -12,6 +12,7 @@ from homeassistant.helpers.translation import async_get_translations
 from .const import (
     DOMAIN,
     MODE_BLINDS,
+    MODE_SUN_PROTECT,
     MODE_WATERING,
     ACTION_STOP,
     ACTION_OPEN,
@@ -49,6 +50,8 @@ async def async_setup_entry(
                 LoggiaExcludedBlindsSelect(manager),
             ]
         )
+        if manager.has_mode(MODE_SUN_PROTECT):
+            entities.append(LoggiaSunBlindsSelect(manager))
 
     if manager.has_mode(MODE_WATERING):
         entities.extend(
@@ -271,11 +274,16 @@ class LoggiaExcludedBlindsSelect(SelectEntity, RestoreEntity):
 
     @property
     def extra_state_attributes(self) -> dict:
-        """Атрибуты со списками исключённых и активных приводов."""
-        all_b = self.manager.all_blinds
+        """Списки приводов и соответствие entity_id к пунктам select для UI карточки."""
+        all_blinds = self.manager.all_blinds
+        self._rebuild_options()
         return {
-            "excluded_blinds": [b for b in all_b if b in self.excluded_set],
-            "active_blinds": [b for b in all_b if b not in self.excluded_set],
+            "all_blinds": list(all_blinds),
+            "excluded_blinds": [blind for blind in all_blinds if blind in self.excluded_set],
+            "active_blinds": [blind for blind in all_blinds if blind not in self.excluded_set],
+            "option_by_blind": {
+                blind_id: option for option, blind_id in self._option_to_blind.items()
+            },
         }
 
     async def async_select_option(self, option: str) -> None:
@@ -298,6 +306,142 @@ class LoggiaExcludedBlindsSelect(SelectEntity, RestoreEntity):
         if changed:
             self.manager.set_excluded_blinds(self.excluded_set)
 
+        self.async_write_ha_state()
+
+
+class LoggiaSunBlindsSelect(SelectEntity):
+    """Live-настройка приводов, участвующих в защите от прямого солнца."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_has_entity_name = True
+    _attr_translation_key = "blinds_for_protect"
+    _attr_icon = "orry:blind-sun"
+
+    def __init__(self, manager: LoggiaManager) -> None:
+        self.manager = manager
+        self._key = "blinds_for_protect"
+        self._attr_device_info = manager.device_info_for(self._key)
+        self._attr_unique_id = f"{manager.entry.entry_id}_{self._key}"
+        self._option_to_blind: dict[str, str] = {}
+        self._last_options_snapshot: list[str] = []
+        self._txt_all_selected = manager.tr_entity_state(
+            "select", self._key, "all_selected"
+        )
+        self._txt_selected = manager.tr_entity_state(
+            "select", self._key, "selected"
+        )
+        self._txt_enable_all = manager.tr_entity_state(
+            "select", self._key, "enable_all"
+        )
+        manager.config_entities[self._key] = self
+
+    @property
+    def _enable_all_label(self) -> str:
+        return f"{DRIVE_PREFIX_ENABLE_ALL} {self._txt_enable_all}".strip()
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        try:
+            lang = self.hass.config.language or "ru"
+            translations = await async_get_translations(
+                self.hass, lang, "entity", [DOMAIN]
+            )
+            prefix = f"component.{DOMAIN}.entity.select.{self._key}.state."
+            self._txt_all_selected = translations.get(
+                f"{prefix}all_selected", self._txt_all_selected
+            )
+            self._txt_selected = translations.get(
+                f"{prefix}selected", self._txt_selected
+            )
+            self._txt_enable_all = translations.get(
+                f"{prefix}enable_all", self._txt_enable_all
+            )
+        except Exception:
+            pass
+
+        @callback
+        def _async_on_blind_state_change(_event) -> None:
+            new_options = self._rebuild_options()
+            if new_options != self._last_options_snapshot:
+                self._last_options_snapshot = list(new_options)
+                self.async_write_ha_state()
+
+        if self.manager.all_blinds:
+            self.async_on_remove(
+                async_track_state_change_event(
+                    self.hass, self.manager.all_blinds, _async_on_blind_state_change
+                )
+            )
+        self._last_options_snapshot = self._rebuild_options()
+        self.async_write_ha_state()
+
+    def _blind_label(self, blind_id: str, used_names: set[str]) -> str:
+        st = self.manager.hass.states.get(blind_id) if self.manager.hass else None
+        base_name = st.name if st and st.name else blind_id
+        selected = blind_id in self.manager.blinds_for_protect
+        state_prefix = DRIVE_PREFIX_ACTIVE if selected else DRIVE_PREFIX_EXCLUDED
+        label = f"{state_prefix} {base_name}".strip()
+        if label in used_names:
+            label = f"{state_prefix} {base_name} ({blind_id})".strip()
+        used_names.add(label)
+        return label
+
+    def _summary_label(self) -> str:
+        total = len(self.manager.all_blinds)
+        selected_count = len(self.manager.blinds_for_protect)
+        if selected_count == total:
+            return f"{self._txt_all_selected} ({total})"
+        return f"{self._txt_selected}: {selected_count} / {total}"
+
+    def _rebuild_options(self) -> list[str]:
+        self._option_to_blind.clear()
+        used_names: set[str] = set()
+        all_blinds = self.manager.all_blinds
+        selected = self.manager.blinds_for_protect
+        options = [self._summary_label()]
+        if len(selected) < len(all_blinds):
+            options.append(self._enable_all_label)
+        for blind_id in all_blinds:
+            label = self._blind_label(blind_id, used_names)
+            self._option_to_blind[label] = blind_id
+            options.append(label)
+        return options
+
+    @property
+    def options(self) -> list[str]:
+        return self._rebuild_options()
+
+    @property
+    def current_option(self) -> str | None:
+        return self._summary_label()
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        self._rebuild_options()
+        all_blinds = self.manager.all_blinds
+        selected = self.manager.blinds_for_protect
+        return {
+            "all_blinds": list(all_blinds),
+            "selected_blinds": [blind for blind in all_blinds if blind in selected],
+            "option_by_blind": {
+                blind_id: option for option, blind_id in self._option_to_blind.items()
+            },
+        }
+
+    async def async_select_option(self, option: str) -> None:
+        self._rebuild_options()
+        selected = set(self.manager.blinds_for_protect)
+        if option == self._enable_all_label:
+            selected = set(self.manager.all_blinds)
+        elif option in self._option_to_blind:
+            blind_id = self._option_to_blind[option]
+            if blind_id in selected:
+                selected.remove(blind_id)
+            else:
+                selected.add(blind_id)
+        else:
+            return
+        await self.manager.async_set_blinds_for_protect(selected)
         self.async_write_ha_state()
 
 

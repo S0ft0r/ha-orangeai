@@ -1,14 +1,14 @@
 # Домашняя оранжерея (Home Orangery)
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![Version](https://img.shields.io/badge/version-0.1.23-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
+[![Version](https://img.shields.io/badge/version-0.1.24-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.8.0%2B-41BDF5.svg)](https://www.home-assistant.io/)
 [![Manufacturer](https://img.shields.io/badge/manufacturer-OrangeAI-purple.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Author](https://img.shields.io/badge/author-%40S0ft0r-orange.svg)](https://github.com/S0ft0r)
 
 🌐 **Язык:** **🇷🇺 Русский** | [🇬🇧 English](README.en.md)
 
-> **Версия:** 0.1.23  
+> **Версия:** 0.1.24  
 > **Производитель:** `OrangeAI` · **Автор:** [Softor (@S0ft0r)](https://github.com/S0ft0r)  
 > Для сообщества: [тема на 4PDA](https://4pda.to/forum/index.php?showtopic=871505&view=findpost&p=143572987)
 
@@ -58,7 +58,7 @@ show_position_percent: true
 title: Домашняя оранжерея
 ```
 
-`default_tab`: `blinds` (по умолчанию), `phytolamp` или `watering`; `title` задаёт собственный заголовок. `drive_indicator`: `position`, `battery` или `none` (без полосы; если параметр не задан, полосы нет). `show_position_percent` независимо управляет процентом положения и по умолчанию равен `true`. Необязательный `switch_icon` задаёт иконку Home Assistant вместо стандартного переключателя (например, `mdi:power`); если параметр не задан, остаётся штатный переключатель. Иконки сущностей настраиваются штатно в Home Assistant. Открыть [конструктор карточки](https://html-preview.github.io/?url=https://github.com/S0ft0r/ha-orangeai/blob/main/docs/orry-builder.html) или изучить [полную документацию](docs/DOCUMENTATION.md#кастомная-карточка-lovelace).
+`default_tab`: `blinds` (по умолчанию), `phytolamp` или `watering`; `title` задаёт собственный заголовок. `drive_indicator`: `position`, `battery` или `none` (без полосы; если параметр не задан, полосы нет). `show_position_percent` независимо управляет процентом положения и по умолчанию равен `true`. Необязательный `switch_icon` задаёт иконку Home Assistant вместо стандартного переключателя (например, `mdi:power`); если параметр не задан, остаётся штатный переключатель. Иконки приводов берутся из настроек сущностей Home Assistant, а если иконка не задана — показывают положение шторы. Строки приводов включают чекбоксы защиты от солнца и рабочего режима; изменения сразу передаются интеграции. Отключённые строки штрихуются, кроме чекбокса включения. Отдельный заголовок «Привода» не добавляется. Открыть [интерактивный конструктор карточки](https://html-preview.github.io/?url=https://github.com/S0ft0r/ha-orangeai/blob/main/docs/orry-builder.html) или изучить [полную документацию](docs/DOCUMENTATION.md#кастомная-карточка-lovelace).
 
 ## Полная документация
 

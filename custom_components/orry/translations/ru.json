@@ -857,6 +857,14 @@
           "excluded": "Исключено"
         }
       },
+      "blinds_for_protect": {
+        "name": "Привода защиты от солнца",
+        "state": {
+          "enable_all": "Включить все привода в защиту",
+          "all_selected": "Все участвуют в защите",
+          "selected": "В защите"
+        }
+      },
       "watering_zone": {
         "name": "Направление полива",
         "state": {

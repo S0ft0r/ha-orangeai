@@ -1,16 +1,16 @@
 # Домашняя оранжерея (Home Orangery) — Интеграция для Home Assistant
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![Version](https://img.shields.io/badge/version-0.1.23-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
+[![Version](https://img.shields.io/badge/version-0.1.24-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.8.0%2B-41BDF5.svg)](https://www.home-assistant.io/)
 [![Manufacturer](https://img.shields.io/badge/manufacturer-OrangeAI-purple.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Author](https://img.shields.io/badge/author-%40S0ft0r-orange.svg)](https://github.com/S0ft0r)
 
 🌐 **Language:** **🇷🇺 Русский** | [🇬🇧 English full documentation](DOCUMENTATION.en.md)
 
-[Краткая версия README](../README.md) · [Интерактивный конструктор YAML-карточки](https://html-preview.github.io/?url=https://github.com/S0ft0r/ha-orangeai/blob/main/docs/orry-builder.html)
+[Краткая версия README](../README.md) · [Открыть интерактивный конструктор YAML-карточки](https://html-preview.github.io/?url=https://github.com/S0ft0r/ha-orangeai/blob/main/docs/orry-builder.html)
 
-> **Версия:** 0.1.23  
+> **Версия:** 0.1.24  
 > **Производитель:** `OrangeAI`  
 > **Автор:** [Softor (@S0ft0r)](https://github.com/S0ft0r)  
 > **Специально для сообщества:** [4PDA](https://4pda.to/forum/index.php?showtopic=871505&view=findpost&p=143572987)
@@ -82,6 +82,8 @@
 ## Кастомная карточка Lovelace
 
 Интеграция включает полную карточку `custom:orry-card` в стиле Home Assistant: шапка, сводные плитки и вкладки активных модулей **«Шторы»**, **«Подсветка»** и **«Полив»**. На вкладках доступны групповые команды штор, управление настроенными светильниками и автополивом, сводка расписания и ручной дозированный полив. Состав вкладок определяется автоматически по включённым модулям; отдельный параметр `mode` не требуется.
+
+В списке приводов показываются все привода, включая исключённые из автоматики. Чекбокс **«Защита от солнца»** связан с новой сущностью select `blinds_for_protect`; если модуль солнцезащиты включён, этот select позволяет менять список на лету без перезагрузки интеграции. Во время уже активной защиты выбранные привода сразу прикрываются, а снятые с защиты открываются. Чекбокс **«В работе»** меняет существующий select `excluded_blinds`. Отключённые строки затемнены и заштрихованы, кроме последней ячейки с чекбоксом включения. Индикатор положения/заряда занимает всю доступную ширину; процент положения настраивается независимо. Иконка берётся из настроек сущности Home Assistant, а если не задана — меняется по текущему положению. Отдельный заголовок **«Привода»** не добавляется. Карточка использует тему Home Assistant.
 
 - В режиме Lovelace **Storage** ресурс карточки регистрируется автоматически; в режиме YAML интеграция загружает JS-модуль через frontend. Добавлять ресурс вручную не нужно.
 - В визуальном редакторе выберите основной сенсор **«Далее»** на главном устройстве нужной конфигурации Orry. Карточка автоматически найдёт связанные сущности на основном устройстве и его подустройствах.

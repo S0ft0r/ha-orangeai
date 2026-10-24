@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.1.24] — 2026-10-24
+
+### Added
+- **Ported the approved drive list into `custom:orry-card`:** each drive shows a position-aware icon, one position/battery/no-bar indicator, an independently configurable position percentage, and compact sun-protection/work checkboxes. No separate “Drives” heading is added.
+- **Drive checkboxes are connected to the integration:** the work checkbox uses `excluded_blinds`; the new live `blinds_for_protect` select persists sun-protection choices without reloading and applies changes immediately during active protection.
+- **Excluded drive rows are dimmed and hatched,** while the final “In work” checkbox cell remains bright and unhatched. The indicator fills the available row width. The card uses the Home Assistant theme.
+
+---
+
 ## [0.1.23] — 2026-10-24
 
 ### Added

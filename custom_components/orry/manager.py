@@ -353,10 +353,55 @@ class LoggiaManager:
             cover_ent = self.config_entities.get(cover_key)
             if cover_ent:
                 cover_ent.async_write_ha_state()
+        for select_key in ("excluded_blinds", "blinds_for_protect"):
+            select_ent = self.config_entities.get(select_key)
+            if select_ent:
+                select_ent.async_write_ha_state()
         self.recheck_failed_blinds()
         self._sync_repair_issues()
         if self._status_sensor:
             self._status_sensor.async_refresh_status()
+
+    @property
+    def blinds_for_protect(self) -> set[str]:
+        """Привода, выбранные для защиты; пустой старый параметр означает «все»."""
+        all_blinds = set(self.all_blinds)
+        specified = set(self.get_setting("blinds_for_protect", []) or [])
+        explicitly_configured = bool(
+            self.get_setting("blinds_for_protect_explicit", False)
+        )
+        if not specified and not explicitly_configured:
+            return all_blinds
+        return specified & all_blinds
+
+    async def async_set_blinds_for_protect(self, selected: list[str] | set[str]) -> None:
+        """Сохранить набор приводов защиты от солнца без перезагрузки и сразу применить его."""
+        old_selected = set(self.protect_blinds)
+        all_blinds = self.all_blinds
+        selected_set = set(selected) & set(all_blinds)
+        stored_list = [blind for blind in all_blinds if blind in selected_set]
+        current_list = list(self.get_setting("blinds_for_protect", []) or [])
+        is_explicit = bool(self.get_setting("blinds_for_protect_explicit", False))
+        if current_list != stored_list or not is_explicit:
+            new_options = dict(self.entry.options)
+            new_options["blinds_for_protect"] = stored_list
+            new_options["blinds_for_protect_explicit"] = True
+            self._ignore_next_options_update = True
+            self.hass.config_entries.async_update_entry(self.entry, options=new_options)
+
+        new_selected = set(self.protect_blinds)
+        if self._is_sun_protecting:
+            removed = [blind for blind in all_blinds if blind in old_selected - new_selected]
+            added = [blind for blind in all_blinds if blind in new_selected - old_selected]
+            if removed:
+                await self.async_set_position(self.get_up_limit(), removed)
+            if added:
+                await self.async_set_position(self.get_down_limit(), added)
+
+        for entity_key in ("blinds_for_protect", "sun_blinds"):
+            entity = self.config_entities.get(entity_key)
+            if entity:
+                entity.async_write_ha_state()
 
     @property
     def blinds(self) -> list[str]:
@@ -366,12 +411,9 @@ class LoggiaManager:
 
     @property
     def protect_blinds(self) -> list[str]:
-        """Пересечение выбранных штор защиты с активными основными шторами (п. 5 ТЗ)."""
-        active_blinds = self.blinds
-        specified = self.get_setting("blinds_for_protect", [])
-        if not specified:
-            return active_blinds
-        return [b for b in specified if b in active_blinds]
+        """Выбранные для защиты привода, ограниченные активными основными шторами."""
+        selected = self.blinds_for_protect
+        return [blind for blind in self.blinds if blind in selected]
 
     def get_up_limit(self) -> int:
         """Верхний предел из нативного ползунка интеграции."""

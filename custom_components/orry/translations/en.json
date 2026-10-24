@@ -857,6 +857,14 @@
           "excluded": "Excluded"
         }
       },
+      "blinds_for_protect": {
+        "name": "Drives for sun protection",
+        "state": {
+          "enable_all": "Include all drives in protection",
+          "all_selected": "All included in protection",
+          "selected": "In protection"
+        }
+      },
       "watering_zone": {
         "name": "Watering zone",
         "state": {

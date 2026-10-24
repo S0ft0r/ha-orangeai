@@ -4,7 +4,7 @@
  */
 
 const CARD_TYPE = "orry-card";
-const CARD_VERSION = "0.1.23";
+const CARD_VERSION = "0.1.24";
 const DOMAIN = "orry";
 
 const ENTITY_KEYS = [
@@ -14,6 +14,8 @@ const ENTITY_KEYS = [
   "watering_status",
   "blinds",
   "sun_blinds",
+  "excluded_blinds",
+  "blinds_for_protect",
   "battery",
   "open_count",
   "closed_count",
@@ -78,6 +80,16 @@ const ENTITY_FALLBACK_RULES = {
     domain: "cover",
     group: "drives",
     labels: ["шторы защиты от солнца", "sun protection blinds", "shtory zashchity ot solntsa"],
+  },
+  excluded_blinds: {
+    domain: "select",
+    group: "drives",
+    labels: ["используемые привода", "used drives", "ispolzuemye privoda"],
+  },
+  blinds_for_protect: {
+    domain: "select",
+    group: "drives",
+    labels: ["привода защиты от солнца", "drives for sun protection", "privoda zashchity ot solntsa"],
   },
   battery: {
     domain: "sensor",
@@ -202,6 +214,8 @@ const TEXT = {
     allBlinds: "Все активные шторы",
     drivePositions: "Положение приводов",
     updatedNow: "Текущее состояние",
+    sunProtection: "Защита от солнца",
+    driveEnabled: "Привод включён в работу",
     open: "Открыть",
     stop: "Стоп",
     close: "Закрыть",
@@ -253,6 +267,8 @@ const TEXT = {
     allBlinds: "All active blinds",
     drivePositions: "Drive positions",
     updatedNow: "Current state",
+    sunProtection: "Sun protection",
+    driveEnabled: "Drive enabled for operation",
     open: "Open",
     stop: "Stop",
     close: "Close",
@@ -544,7 +560,8 @@ const CARD_STYLES = `
   }
   .header-subtitle { margin-top: 2px; color: var(--secondary-text-color); font-size: 12px; }
   .next-pill {
-    max-width: 48%;
+    max-width: calc(100% - 36px);
+    min-width: 0;
     flex: 0 1 auto;
     display: inline-flex;
     align-items: center;
@@ -559,7 +576,7 @@ const CARD_STYLES = `
     cursor: pointer;
   }
   .next-pill svg { width: 15px; height: 15px; flex: 0 0 15px; }
-  .next-pill span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .next-pill span { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
   .kpi-grid {
     display: grid;
@@ -673,6 +690,62 @@ const CARD_STYLES = `
     font-weight: 600;
   }
   .entity-list { display: flex; flex-direction: column; }
+  .drive-list {
+    --drive-check-width: 30px;
+    --drive-column-gap: 7px;
+    display: flex;
+    flex-direction: column;
+    margin-top: 13px;
+  }
+  .drive-list-heading, .drive-row {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) var(--drive-check-width) var(--drive-check-width);
+    align-items: center;
+    column-gap: var(--drive-column-gap);
+  }
+  .drive-list-heading {
+    min-height: 28px;
+    padding: 0 2px 4px;
+    border-bottom: 1px solid var(--divider-color, rgba(127,127,127,.12));
+  }
+  .drive-column-icon { display: flex; align-items: center; justify-content: center; color: var(--secondary-text-color); }
+  .drive-column-icon ha-icon { width: 17px; height: 17px; --mdc-icon-size: 17px; }
+  .sun-column-icon { color: var(--state-icon-color, #fdd835); }
+  .drive-row {
+    min-height: 48px;
+    position: relative;
+    isolation: isolate;
+    padding: 6px 2px;
+    border-bottom: 1px solid var(--divider-color, rgba(127,127,127,.12));
+  }
+  .drive-row:last-child { border-bottom: 0; }
+  .drive-row[data-more-info] { cursor: pointer; }
+  .drive-row[data-more-info]:hover { background: var(--orry-row-hover); }
+  .drive-row > * { min-width: 0; position: relative; z-index: 1; }
+  .drive-row-icon.entity-icon { width: 28px; height: 28px; }
+  .drive-main { min-width: 0; }
+  .drive-main-top { min-width: 0; display: flex; align-items: center; gap: 7px; }
+  .drive-main-top .entity-name { min-width: 0; flex: 1; }
+  .drive-position { flex: 0 0 auto; color: var(--primary-color, #03a9f4); font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .drive-main .mini-track { margin-top: 4px; }
+  .drive-checkbox-cell { min-height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .drive-checkbox { width: 15px; height: 15px; margin: 0; accent-color: var(--primary-color, #03a9f4); cursor: pointer; }
+  .drive-checkbox:disabled { cursor: default; opacity: .55; }
+  .drive-checkbox:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 2px; }
+  .drive-row.is-disabled::before {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    top: 0;
+    right: calc(var(--drive-check-width) + var(--drive-column-gap));
+    bottom: 0;
+    left: -2px;
+    border-radius: 5px;
+    background: repeating-linear-gradient(-45deg, transparent 0 5px, rgba(127,127,127,.13) 5px 7px);
+    pointer-events: none;
+  }
+  .drive-row.is-disabled > :not(.drive-work-cell) { opacity: .42; }
+  .drive-row.is-disabled > .drive-work-cell { opacity: 1; }
   .entity-row {
     min-height: 44px;
     display: grid;
@@ -701,7 +774,7 @@ const CARD_STYLES = `
   .entity-name { overflow: hidden; font-size: 12px; font-weight: 500; white-space: nowrap; text-overflow: ellipsis; }
   .entity-state { margin-top: 2px; color: var(--secondary-text-color); font-size: 10px; }
   .entity-value { color: var(--primary-text-color); font-size: 12px; font-weight: 600; white-space: nowrap; }
-  .mini-track { width: 78px; height: 4px; margin-top: 5px; overflow: hidden; border-radius: 999px; background: var(--orry-chip-bg); }
+  .mini-track { width: 100%; height: 4px; margin-top: 5px; overflow: hidden; border-radius: 999px; background: var(--orry-chip-bg); }
   .mini-fill { height: 100%; border-radius: inherit; background: var(--primary-color, #03a9f4); }
   .mini-fill.drive-battery-green { background: #4caf50; }
   .mini-fill.drive-battery-yellow { background: #fdd835; }
@@ -811,8 +884,14 @@ const CARD_STYLES = `
     .content { padding-left: 12px; padding-right: 12px; }
     .subbar { padding-left: 12px; padding-right: 12px; }
     .tab-btn { gap: 4px; padding-left: 3px; padding-right: 3px; font-size: 11px; }
-    .next-pill { max-width: 44%; font-size: 10px; }
+    .next-pill { max-width: calc(100% - 36px); font-size: 10px; }
     .action-btn { font-size: 10px; }
+  }
+  @media (max-width: 380px) {
+    .drive-list { --drive-check-width: 25px; --drive-column-gap: 5px; }
+    .drive-list-heading, .drive-row { grid-template-columns: 24px minmax(0, 1fr) var(--drive-check-width) var(--drive-check-width); }
+    .drive-row-icon.entity-icon { width: 24px; height: 24px; }
+    .drive-position { font-size: 10px; }
   }
 `;
 
@@ -1087,6 +1166,7 @@ class OrryCard extends HTMLElement {
     const watched = new Set(Object.values(bundle?.ids || {}).filter(Boolean));
     const coverState = bundle?.states?.blinds;
     const coverAttrs = coverState?.attributes || {};
+    for (const entityId of coverAttrs.all_blinds || []) watched.add(entityId);
     for (const entityId of coverAttrs.active_blinds || []) watched.add(entityId);
     const lightAttrs = bundle?.states?.phytolamp_status?.attributes || {};
     const configuredLights = lightAttrs.orry_phytolamps || lightAttrs.phytolamps;
@@ -1352,7 +1432,7 @@ class OrryCard extends HTMLElement {
   _renderTab(module, bundle) {
     let count = 0;
     if (module.key === "blinds") {
-      count = this._activeBlindIds(bundle).length;
+      count = this._allBlindIds(bundle).length;
     } else if (module.key === "phytolamp") {
       count = this._lights(bundle).length;
     } else {
@@ -1366,10 +1446,46 @@ class OrryCard extends HTMLElement {
   }
 
   _activeBlindIds(bundle) {
-    const cover = this._state(bundle, "blinds");
-    const active = cover?.attributes?.active_blinds;
+    const selectAttrs = this._state(bundle, "excluded_blinds")?.attributes || {};
+    const coverAttrs = this._state(bundle, "blinds")?.attributes || {};
+    const active = Array.isArray(selectAttrs.active_blinds)
+      ? selectAttrs.active_blinds
+      : coverAttrs.active_blinds;
     if (Array.isArray(active)) return active.filter((id) => typeof id === "string");
     return [];
+  }
+
+  _allBlindIds(bundle) {
+    const coverAttrs = this._state(bundle, "blinds")?.attributes || {};
+    const workAttrs = this._state(bundle, "excluded_blinds")?.attributes || {};
+    const sunAttrs = this._state(bundle, "blinds_for_protect")?.attributes || {};
+    const all = Array.isArray(coverAttrs.all_blinds)
+      ? coverAttrs.all_blinds
+      : Array.isArray(workAttrs.all_blinds)
+        ? workAttrs.all_blinds
+        : Array.isArray(sunAttrs.all_blinds)
+          ? sunAttrs.all_blinds
+          : null;
+    if (all) return [...new Set(all.filter((id) => typeof id === "string"))];
+
+    const fallback = [
+      ...(Array.isArray(coverAttrs.active_blinds) ? coverAttrs.active_blinds : []),
+      ...(Array.isArray(coverAttrs.excluded_blinds) ? coverAttrs.excluded_blinds : []),
+      ...(Array.isArray(workAttrs.active_blinds) ? workAttrs.active_blinds : []),
+      ...(Array.isArray(workAttrs.excluded_blinds) ? workAttrs.excluded_blinds : []),
+    ];
+    return [...new Set(fallback.filter((id) => typeof id === "string"))];
+  }
+
+  _blindIcon(entityId, state, position) {
+    const metaIcon = this._hass?.entities?.[entityId]?.icon;
+    const entityIcon = metaIcon || state?.attributes?.icon;
+    if (entityIcon) return haIcon(entityIcon);
+    if (position !== null) {
+      const step = Math.max(0, Math.min(100, Math.round(position / 25) * 25));
+      return haIcon(`orry:blind-${step}`) || icon("blinds");
+    }
+    return icon("blinds");
   }
 
   _renderBlindsPanel(bundle) {
@@ -1377,12 +1493,26 @@ class OrryCard extends HTMLElement {
     const coverId = bundle.ids.blinds;
     const cover = this._state(bundle, "blinds");
     const pos = this._position(cover);
-    const active = this._activeBlindIds(bundle);
-    const excluded = Array.isArray(cover?.attributes?.excluded_blinds)
-      ? cover.attributes.excluded_blinds
-      : [];
+    const allBlinds = this._allBlindIds(bundle);
+    const activeIds = new Set(this._activeBlindIds(bundle));
+    const workSelectId = bundle.ids.excluded_blinds || "";
+    const workSelect = this._state(bundle, "excluded_blinds");
+    const workAttrs = workSelect?.attributes || {};
+    const sunSelectId = bundle.ids.blinds_for_protect || "";
+    const sunSelect = this._state(bundle, "blinds_for_protect");
+    const sunAttrs = sunSelect?.attributes || {};
+    const sunCoverAttrs = this._state(bundle, "sun_blinds")?.attributes || {};
+    const sunSelected = new Set(
+      Array.isArray(sunAttrs.selected_blinds)
+        ? sunAttrs.selected_blinds
+        : Array.isArray(sunCoverAttrs.active_blinds)
+          ? sunCoverAttrs.active_blinds
+          : []
+    );
+    const workOptions = workAttrs.option_by_blind || {};
+    const sunOptions = sunAttrs.option_by_blind || {};
+    const excluded = allBlinds.filter((entityId) => !activeIds.has(entityId));
     const openCount = this._displayState(this._state(bundle, "open_count"), "0");
-    const closedCount = this._displayState(this._state(bundle, "closed_count"), "0");
     const errors = this._displayState(this._state(bundle, "error_count"), "0");
     const summary = `${openCount} ${t("activeDrives")} · ${errors} ${t("errors")}`;
     const coverAvailable = Boolean(coverId && cover && !isUnavailable(cover.state));
@@ -1391,16 +1521,19 @@ class OrryCard extends HTMLElement {
       ? this._config.drive_indicator
       : "none";
     const showPositionPercent = this._config?.show_position_percent !== false;
-    const rows = active
+    const rows = allBlinds
       .map((entityId) => {
         const state = this._hass.states?.[entityId];
         const position = this._position(state);
         const battery = this._blindBatteryPercent(bundle, entityId, state);
         const name = this._entityName(entityId);
+        const isWorking = activeIds.has(entityId);
+        const sunOption = sunOptions[entityId] || "";
+        const workOption = workOptions[entityId] || "";
         let indicator = "";
 
         if (indicatorMode === "position" && position !== null) {
-          indicator = `<div class="mini-track"><div class="mini-fill" style="width:${position}%"></div></div>`;
+          indicator = `<div class="mini-track" aria-label="${position}%"><div class="mini-fill" style="width:${position}%"></div></div>`;
         } else if (indicatorMode === "battery" && battery !== null) {
           const colorClass = battery >= 45
             ? "drive-battery-green"
@@ -1409,22 +1542,34 @@ class OrryCard extends HTMLElement {
               : battery >= 15
                 ? "drive-battery-orange"
                 : "drive-battery-red";
-          indicator = `<div class="mini-track"><div class="mini-fill ${colorClass}" style="width:${battery}%"></div></div>`;
+          indicator = `<div class="mini-track" aria-label="${battery}%"><div class="mini-fill ${colorClass}" style="width:${battery}%"></div></div>`;
         }
 
-        const positionValue = position === null
-          ? `<div class="entity-value">${escapeHtml(this._displayState(state, t("unavailable")))}</div>`
+        const positionText = position === null
+          ? "—"
           : showPositionPercent
-            ? `<div class="entity-value">${position}%</div>`
+            ? `${position}%`
             : "";
+        const rowClass = `drive-row clickable${isWorking ? "" : " is-disabled"}`;
+        const sunChecked = sunSelected.has(entityId);
+        const sunAvailable = Boolean(sunSelectId && sunOption);
+        const workAvailable = Boolean(workSelectId && workOption);
         return `
-          <div class="entity-row clickable" data-more-info="${escapeHtml(entityId)}">
-            <div class="entity-icon">${icon("blinds")}</div>
-            <div>
-              <div class="entity-name">${escapeHtml(name)}</div>
+          <div class="${rowClass}" data-more-info="${escapeHtml(entityId)}">
+            <div class="entity-icon drive-row-icon">${this._blindIcon(entityId, state, position)}</div>
+            <div class="drive-main">
+              <div class="drive-main-top">
+                <div class="entity-name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+                <span class="drive-position">${escapeHtml(positionText)}</span>
+              </div>
               ${indicator}
             </div>
-            ${positionValue}
+            <label class="drive-checkbox-cell drive-sun-cell" title="${escapeHtml(t("sunProtection"))}">
+              <input class="drive-checkbox" type="checkbox" data-action="drive-sun-toggle" data-entity="${escapeHtml(sunSelectId)}" data-option="${escapeHtml(sunOption)}" aria-label="${escapeHtml(`${name}: ${t("sunProtection")}`)}" ${sunChecked ? "checked" : ""} ${sunAvailable ? "" : "disabled"}>
+            </label>
+            <label class="drive-checkbox-cell drive-work-cell" title="${escapeHtml(t("driveEnabled"))}">
+              <input class="drive-checkbox" type="checkbox" data-action="drive-work-toggle" data-entity="${escapeHtml(workSelectId)}" data-option="${escapeHtml(workOption)}" aria-label="${escapeHtml(`${name}: ${t("driveEnabled")}`)}" ${isWorking ? "checked" : ""} ${workAvailable ? "" : "disabled"}>
+            </label>
           </div>
         `;
       })
@@ -1442,8 +1587,14 @@ class OrryCard extends HTMLElement {
             <button class="action-btn" data-action="cover-service" data-service="close_cover" data-entity="${escapeHtml(coverId)}" ${!coverAvailable ? "disabled" : ""}>${icon("close")}<span>${escapeHtml(t("close"))}</span></button>
           </div>
         </div>
-        <div class="section-label"><span>${escapeHtml(t("drivePositions"))}</span><span>${escapeHtml(t("updatedNow"))}</span></div>
-        <div class="entity-list">${rows || `<div class="empty-inline">${escapeHtml(t("noDriveData"))}</div>`}</div>
+        <div class="drive-list">
+          <div class="drive-list-heading" aria-label="${escapeHtml(t("drivePositions"))}">
+            <span></span><span></span>
+            <span class="drive-column-icon sun-column-icon" title="${escapeHtml(t("sunProtection"))}">${haIcon("mdi:white-balance-sunny")}</span>
+            <span class="drive-column-icon" title="${escapeHtml(t("driveEnabled"))}">${haIcon("mdi:power")}</span>
+          </div>
+          ${rows || `<div class="empty-inline">${escapeHtml(t("noDriveData"))}</div>`}
+        </div>
       </div>
     `;
   }
@@ -1666,8 +1817,23 @@ class OrryCard extends HTMLElement {
       });
     });
 
+    root.querySelectorAll(".drive-checkbox-cell").forEach((cell) => {
+      cell.addEventListener("click", (event) => event.stopPropagation());
+    });
+    root.querySelectorAll("[data-action='drive-sun-toggle'], [data-action='drive-work-toggle']").forEach((input) => {
+      input.addEventListener("click", (event) => event.stopPropagation());
+      input.addEventListener("change", () => {
+        const entityId = input.getAttribute("data-entity");
+        const option = input.getAttribute("data-option");
+        if (entityId && option && !input.disabled) {
+          this._callService("select", "select_option", { entity_id: entityId, option });
+        }
+      });
+    });
+
     root.querySelectorAll("[data-more-info]").forEach((element) => {
-      element.addEventListener("click", () => {
+      element.addEventListener("click", (event) => {
+        if (event.target?.closest?.("[data-action]")) return;
         const entityId = element.getAttribute("data-more-info");
         if (!entityId) return;
         this.dispatchEvent(
