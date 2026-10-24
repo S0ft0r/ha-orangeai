@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.1.24.1] — 2026-10-24
+
+### Fixed
+- **Restored the “In work” checkboxes:** the `excluded_blinds` select now initializes from saved config-entry options, without overwriting settings from restored entity state or performing redundant state writes at startup.
+- **Added a fallback to resolve select options by drive entity ID/name** when Home Assistant frontend metadata omits `option_by_blind`.
+- The card continues to use the Home Assistant theme only; no manual theme toggle or local persistence is included.
+
+---
+
 ## [0.1.24] — 2026-10-24
 
 ### Added

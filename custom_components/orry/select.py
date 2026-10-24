@@ -146,7 +146,7 @@ class LoggiaManualActionSelect(SelectEntity):
             self.async_write_ha_state()
 
 
-class LoggiaExcludedBlindsSelect(SelectEntity, RestoreEntity):
+class LoggiaExcludedBlindsSelect(SelectEntity):
     """Умный выпадающий список для включения/исключения отдельных приводов из работы."""
 
     _attr_entity_category = EntityCategory.CONFIG
@@ -206,13 +206,6 @@ class LoggiaExcludedBlindsSelect(SelectEntity, RestoreEntity):
             )
         except Exception:
             pass
-
-        last_state = await self.async_get_last_state()
-        if last_state and "excluded_blinds" in last_state.attributes:
-            restored = last_state.attributes.get("excluded_blinds") or []
-            all_set = set(self.manager.all_blinds)
-            self.excluded_set = {b for b in restored if b in all_set}
-            self.manager.set_excluded_blinds(self.excluded_set)
 
         @callback
         def _async_on_blind_state_change(event) -> None:

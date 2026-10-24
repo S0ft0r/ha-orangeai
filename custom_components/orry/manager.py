@@ -353,10 +353,6 @@ class LoggiaManager:
             cover_ent = self.config_entities.get(cover_key)
             if cover_ent:
                 cover_ent.async_write_ha_state()
-        for select_key in ("excluded_blinds", "blinds_for_protect"):
-            select_ent = self.config_entities.get(select_key)
-            if select_ent:
-                select_ent.async_write_ha_state()
         self.recheck_failed_blinds()
         self._sync_repair_issues()
         if self._status_sensor:

@@ -4,7 +4,7 @@
  */
 
 const CARD_TYPE = "orry-card";
-const CARD_VERSION = "0.1.24";
+const CARD_VERSION = "0.1.24.1";
 const DOMAIN = "orry";
 
 const ENTITY_KEYS = [
@@ -1304,6 +1304,20 @@ class OrryCard extends HTMLElement {
     return null;
   }
 
+  _blindSelectOption(selectState, entityId, name, isSelected) {
+    const attrs = selectState?.attributes || {};
+    const direct = attrs.option_by_blind?.[entityId];
+    if (typeof direct === "string" && direct) return direct;
+    const options = Array.isArray(attrs.options) ? attrs.options.map(String) : [];
+    if (!options.length) return "";
+
+    const marker = isSelected ? "\u2713\ufe0e\u00a0\u00a0" : "\u2715\ufe0e\u00a0\u00a0";
+    const matches = options.filter((option) =>
+      option.includes(entityId) || (name && option.includes(name))
+    );
+    return matches.find((option) => option.startsWith(marker)) || matches[0] || "";
+  }
+
   _render() {
     if (!this.shadowRoot) return;
     const bundle = this._bundle || this._resolveEntities();
@@ -1528,8 +1542,13 @@ class OrryCard extends HTMLElement {
         const battery = this._blindBatteryPercent(bundle, entityId, state);
         const name = this._entityName(entityId);
         const isWorking = activeIds.has(entityId);
-        const sunOption = sunOptions[entityId] || "";
-        const workOption = workOptions[entityId] || "";
+        const sunChecked = sunSelected.has(entityId);
+        const sunOption = sunOptions[entityId] || this._blindSelectOption(
+          sunSelect, entityId, name, sunChecked
+        );
+        const workOption = workOptions[entityId] || this._blindSelectOption(
+          workSelect, entityId, name, isWorking
+        );
         let indicator = "";
 
         if (indicatorMode === "position" && position !== null) {
@@ -1551,7 +1570,6 @@ class OrryCard extends HTMLElement {
             ? `${position}%`
             : "";
         const rowClass = `drive-row clickable${isWorking ? "" : " is-disabled"}`;
-        const sunChecked = sunSelected.has(entityId);
         const sunAvailable = Boolean(sunSelectId && sunOption);
         const workAvailable = Boolean(workSelectId && workOption);
         return `

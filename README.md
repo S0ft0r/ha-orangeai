@@ -1,14 +1,14 @@
 # Домашняя оранжерея (Home Orangery)
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![Version](https://img.shields.io/badge/version-0.1.24-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
+[![Version](https://img.shields.io/badge/version-0.1.24.1-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.8.0%2B-41BDF5.svg)](https://www.home-assistant.io/)
 [![Manufacturer](https://img.shields.io/badge/manufacturer-OrangeAI-purple.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Author](https://img.shields.io/badge/author-%40S0ft0r-orange.svg)](https://github.com/S0ft0r)
 
 🌐 **Язык:** **🇷🇺 Русский** | [🇬🇧 English](README.en.md)
 
-> **Версия:** 0.1.24  
+> **Версия:** 0.1.24.1  
 > **Производитель:** `OrangeAI` · **Автор:** [Softor (@S0ft0r)](https://github.com/S0ft0r)  
 > Для сообщества: [тема на 4PDA](https://4pda.to/forum/index.php?showtopic=871505&view=findpost&p=143572987)
 

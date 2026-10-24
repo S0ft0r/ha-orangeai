@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Тег релиза (например, v0.1.24)"
+        description: "Тег релиза (например, v0.1.24.1)"
         required: true
-        default: "v0.1.24"
+        default: "v0.1.24.1"
       prerelease:
         description: "Отметить как Pre-release (альфа/бета)"
         type: boolean
