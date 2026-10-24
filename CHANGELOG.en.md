@@ -7,6 +7,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.1.22] — 2026-10-24
+
+### Added
+- **Full Lovelace card `custom:orry-card`:** header, summary tiles for enabled modules, and tabs for Blinds, Lighting, and Watering; related entities are discovered automatically from the selected Orry configuration.
+- **Card controls:** grouped blind control, configured light toggles, auto-watering and skip-cycle switches, schedule summary, and manual dosed watering.
+- **Automatic frontend resource registration** in Lovelace Storage mode and deferred custom-element registration for current Home Assistant frontends.
+
+### Fixed
+- Card entity discovery now also works when frontend metadata omits `unique_id` / `translation_key`: it falls back to display names and sub-device groups, including localized entity IDs.
+- Frontend resource URLs include hashes of both the JS asset and loader, so the stale app-shell URL changes even when file timestamps match.
+
+---
+
+## [0.1.21] — 2026-10-21
+
+### Changed
+- **Split schedule setup into two compact screens without scrolling (`ConfigFlow` & `OptionsFlow`):**
+  - The **"Schedule and sun"** (`time`) screen now contains only the *Open at sunrise* / *Close at sunset* toggles and opening/closing time fields.
+  - Work/weekend cycle parameters (*Consecutive workdays*, *Consecutive days off*, *First workday of cycle*) and the *Use weekend schedule on public holidays* toggle have been moved to a dedicated **"Work week"** (`work_week`) screen shown when weekday/weekend schedule separation is enabled.
+- **Russian display name in integration search & HACS:** set `"name": "Домашняя оранжерея"` in `manifest.json` and `hacs.json` so the integration is searchable in Russian in Home Assistant's "Select brand" dialog and in HACS.
+
+---
+
 ## [0.1.20] — 2026-10-21
 
 ### Added

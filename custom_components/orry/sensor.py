@@ -293,11 +293,45 @@ class LoggiaPhytolampStatusSensor(LoggiaBaseSensor):
         self._lamps_state_map: dict[str, str] = {}
 
     @property
-    def extra_state_attributes(self) -> dict[str, str]:
-        """Состояние каждого светильника/выключателя подсветки."""
+    def extra_state_attributes(self) -> dict[str, object]:
+        """Состояние и идентификаторы устройств подсветки для интерфейсов."""
         if not self.manager.has_mode(MODE_PHYTOLAMP):
             return {}
-        return dict(self._lamps_state_map)
+
+        attributes: dict[str, object] = dict(self._lamps_state_map)
+        lamps: list[dict[str, object]] = []
+        used_names: set[str] = set()
+        on_lbl = self.manager.tr_sensor_state("phytolamp_status", "lamp_on")
+        off_lbl = self.manager.tr_sensor_state("phytolamp_status", "lamp_off")
+        unknown_lbl = self.manager.tr_sensor_state("status", "unknown")
+
+        for lamp_id in self.manager.phytolamps:
+            state = self.hass.states.get(lamp_id) if self.hass else None
+            name = state.name if (state and state.name) else lamp_id
+            if name in used_names:
+                name = f"{name} ({lamp_id})"
+            used_names.add(name)
+            available = bool(
+                state and state.state not in ("unknown", "unavailable", "")
+            )
+            lamps.append(
+                {
+                    "entity_id": lamp_id,
+                    "name": name,
+                    "state": (
+                        on_lbl
+                        if state and state.state == "on"
+                        else off_lbl
+                        if available
+                        else unknown_lbl
+                    ),
+                    "is_on": state.state == "on" if available and state else None,
+                    "available": available,
+                }
+            )
+
+        attributes["orry_phytolamps"] = lamps
+        return attributes
 
     @callback
     def async_refresh_status(self, event=None) -> None:
@@ -792,10 +826,11 @@ class LoggiaWateringStatusSensor(LoggiaBaseSensor):
 
     @property
     def extra_state_attributes(self) -> dict:
-        """Сводная таблица направлений полива в атрибутах сенсора состояния."""
+        """Сводка и структурированные настройки направлений полива."""
         if not self.manager.has_mode(MODE_WATERING) or not self.manager.watering_valves:
             return {}
-        zones_summary: dict[str, str] = {}
+        zones_summary: dict[str, object] = {}
+        zones: list[dict[str, object]] = []
         excl_morning = self.manager.excluded_watering_morning
         excl_evening = self.manager.excluded_watering_evening
         m_lbl = self.manager.tr_entity_state("select", "watering_zone", "morning_short")
@@ -822,10 +857,33 @@ class LoggiaWateringStatusSensor(LoggiaBaseSensor):
                     "select", "watering_morning_mode", e_mode_key, e_mode_key
                 )
             )
+            try:
+                morning_duration = int(cfg.get("m_duration", 0) or 0)
+            except (TypeError, ValueError):
+                morning_duration = 0
+            try:
+                evening_duration = int(cfg.get("e_duration", 0) or 0)
+            except (TypeError, ValueError):
+                evening_duration = 0
             zones_summary[name] = (
-                f"{m_lbl}: {m_mode_txt} ({cfg.get('m_duration')}{sec_lbl}) | "
-                f"{e_lbl}: {e_mode_txt} ({cfg.get('e_duration')}{sec_lbl})"
+                f"{m_lbl}: {m_mode_txt} ({morning_duration}{sec_lbl}) | "
+                f"{e_lbl}: {e_mode_txt} ({evening_duration}{sec_lbl})"
             )
+            zones.append(
+                {
+                    "entity_id": v,
+                    "name": name,
+                    "morning_mode": m_mode_txt,
+                    "morning_duration": morning_duration,
+                    "evening_mode": e_mode_txt,
+                    "evening_duration": evening_duration,
+                    "morning_excluded": v in excl_morning,
+                    "evening_excluded": v in excl_evening,
+                    "state": st.state if st else None,
+                }
+            )
+
+        zones_summary["orry_watering_zones"] = zones
         return zones_summary
 
     async def async_added_to_hass(self) -> None:

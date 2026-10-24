@@ -262,7 +262,7 @@ class LoggiaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def _async_get_default_title(self) -> str:
         """Получить локализованное название экземпляра по умолчанию из translations/*.json."""
-        fallback = "Orangery"
+        fallback = "Loggia"
         try:
             lang = (self.hass.config.language if self.hass else "ru") or "ru"
             tr = await async_get_translations(self.hass, lang, "entity", [DOMAIN])
@@ -361,7 +361,14 @@ class LoggiaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 if MODE_SLIDER in selected_sub:
                     inject_steps.append("device")
                     inject_steps.append("device_payloads")
-                inject_steps.extend(["limits", "time", "repeats"])
+                inject_steps.extend(["limits", "time"])
+                if bool(
+                    self._data.get(
+                        "split_weekend_schedule", DEFAULT_SPLIT_WEEKEND_SCHEDULE
+                    )
+                ):
+                    inject_steps.append("work_week")
+                inject_steps.append("repeats")
 
                 self._steps_queue = inject_steps + self._steps_queue
                 return await self._async_next_step()
@@ -493,6 +500,15 @@ class LoggiaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._data.update(user_input)
 
             inject_steps = []
+            if (
+                bool(
+                    self._get_val(
+                        "split_weekend_schedule", DEFAULT_SPLIT_WEEKEND_SCHEDULE
+                    )
+                )
+                and MODE_BLINDS not in (self._data.get("modes", []) or [])
+            ):
+                inject_steps.append("work_week")
             if user_input.get("phytolamp_use_sun"):
                 inject_steps.append("phytolamp_sun")
             if user_input.get("phytolamp_use_forecast"):
@@ -528,8 +544,6 @@ class LoggiaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         else:
             schema[vol.Optional("phytolamp_on_time_daily", default=self._get_val("phytolamp_on_time_workday", DEFAULT_PHYTOLAMP_ON_WORKDAY))] = selector.TimeSelector()
         schema[vol.Optional("phytolamp_off_time", default=self._get_val("phytolamp_off_time", DEFAULT_PHYTOLAMP_OFF_TIME))] = selector.TimeSelector()
-        if split and MODE_BLINDS not in (self._data.get("modes", []) or []):
-            _add_cycle_schedule_fields(schema, self._get_val)
         return self.async_show_form(step_id="phytolamp_settings", data_schema=vol.Schema(schema))
 
     async def async_step_phytolamp_sun(self, user_input=None):
@@ -942,9 +956,16 @@ class LoggiaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             schema[vol.Optional("up_time_daily", default=self._get_val("up_time_workday", DEFAULT_OPEN_TIME_WORKDAY))] = selector.TimeSelector()
         schema[vol.Optional("close_at_sunset", default=self._get_val("close_at_sunset", DEFAULT_CLOSE_AT_SUNSET))] = selector.BooleanSelector()
         schema[vol.Optional("down_time", default=self._get_val("down_time", DEFAULT_CLOSE_TIME))] = selector.TimeSelector()
-        if split:
-            _add_cycle_schedule_fields(schema, self._get_val)
         return self.async_show_form(step_id="time", data_schema=vol.Schema(schema))
+
+    async def async_step_work_week(self, user_input=None):
+        if user_input is not None:
+            self._data.update(user_input)
+            return await self._async_next_step()
+
+        schema: dict = {}
+        _add_cycle_schedule_fields(schema, self._get_val)
+        return self.async_show_form(step_id="work_week", data_schema=vol.Schema(schema))
 
     async def async_step_repeats(self, user_input=None):
         if user_input is not None:
@@ -1173,14 +1194,21 @@ class LoggiaOptionsFlow(config_entries.OptionsFlow):
                 ):
                     inject_steps.append("device")
                     inject_steps.append("device_payloads")
-                if not self._has_subdevice("drives"):
-                    inject_steps.extend(["limits", "time", "repeats"])
-                elif bool(
+                split_sched = bool(
                     self._options.get(
                         "split_weekend_schedule", DEFAULT_SPLIT_WEEKEND_SCHEDULE
                     )
-                ):
-                    inject_steps.append("time")
+                )
+                if not self._has_subdevice("drives"):
+                    inject_steps.extend(["limits", "time"])
+                    if split_sched:
+                        inject_steps.append("work_week")
+                    inject_steps.append("repeats")
+                else:
+                    if split_sched and not self._has_entity("time", "up_time_weekend"):
+                        inject_steps.append("time")
+                    if split_sched:
+                        inject_steps.append("work_week")
 
                 self._steps_queue = inject_steps + self._steps_queue
                 return await self._async_next_step()
@@ -1315,6 +1343,15 @@ class LoggiaOptionsFlow(config_entries.OptionsFlow):
 
             inject_steps = []
             if (
+                bool(
+                    self._get_val(
+                        "split_weekend_schedule", DEFAULT_SPLIT_WEEKEND_SCHEDULE
+                    )
+                )
+                and MODE_BLINDS not in (self._options.get("modes", []) or [])
+            ):
+                inject_steps.append("work_week")
+            if (
                 user_input.get("phytolamp_use_sun")
                 and not self._has_entity("number", "phytolamp_sun_azimuth")
             ):
@@ -1355,8 +1392,6 @@ class LoggiaOptionsFlow(config_entries.OptionsFlow):
             schema[vol.Optional("phytolamp_off_time", default=self._get_val("phytolamp_off_time", DEFAULT_PHYTOLAMP_OFF_TIME))] = selector.TimeSelector()
         elif split and not self._has_entity("time", "phytolamp_on_time_weekend"):
             schema[vol.Optional("phytolamp_on_time_weekend", default=self._get_val("phytolamp_on_time_weekend", DEFAULT_PHYTOLAMP_ON_WEEKEND))] = selector.TimeSelector()
-        if split and MODE_BLINDS not in (self._options.get("modes", []) or []):
-            _add_cycle_schedule_fields(schema, self._get_val)
         return self.async_show_form(step_id="phytolamp_settings", data_schema=vol.Schema(schema))
 
     async def async_step_phytolamp_sun(self, user_input=None):
@@ -1800,9 +1835,16 @@ class LoggiaOptionsFlow(config_entries.OptionsFlow):
             schema[vol.Optional("down_time", default=self._get_val("down_time", DEFAULT_CLOSE_TIME))] = selector.TimeSelector()
         elif split and not self._has_entity("time", "up_time_weekend"):
             schema[vol.Optional("up_time_weekend", default=self._get_val("up_time_weekend", DEFAULT_OPEN_TIME_WEEKEND))] = selector.TimeSelector()
-        if split:
-            _add_cycle_schedule_fields(schema, self._get_val)
         return self.async_show_form(step_id="time", data_schema=vol.Schema(schema))
+
+    async def async_step_work_week(self, user_input=None):
+        if user_input is not None:
+            self._options.update(user_input)
+            return await self._async_next_step()
+
+        schema: dict = {}
+        _add_cycle_schedule_fields(schema, self._get_val)
+        return self.async_show_form(step_id="work_week", data_schema=vol.Schema(schema))
 
     async def async_step_repeats(self, user_input=None):
         if user_input is not None:

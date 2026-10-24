@@ -1,10 +1,12 @@
 """Интеграция Лоджия — Умные шторы."""
 
+import hashlib
 import logging
 from pathlib import Path
 
-from homeassistant.components.frontend import add_extra_js_url
+from homeassistant.components.frontend import add_extra_js_url, remove_extra_js_url
 from homeassistant.components.http import StaticPathConfig
+from homeassistant.components.lovelace import LOVELACE_DATA, MODE_STORAGE
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.const import Platform
@@ -30,6 +32,48 @@ PLATFORMS: list[Platform] = [
 ]
 
 
+async def _async_upsert_lovelace_resource(hass: HomeAssistant, url: str) -> bool:
+    """Добавить или обновить JS-модуль в ресурсах Lovelace в режиме Storage."""
+    lovelace_data = hass.data.get(LOVELACE_DATA)
+    if getattr(lovelace_data, "resource_mode", None) != MODE_STORAGE:
+        return False
+
+    resources = getattr(lovelace_data, "resources", None)
+    methods = (
+        "async_get_info",
+        "async_items",
+        "async_create_item",
+        "async_update_item",
+        "async_delete_item",
+    )
+    if resources is None or not all(hasattr(resources, method) for method in methods):
+        return False
+
+    await resources.async_get_info()
+    base_url = url.split("?", 1)[0]
+    matches = [
+        item
+        for item in resources.async_items()
+        if str(item.get("url", "")).split("?", 1)[0] == base_url
+    ]
+    if not matches:
+        await resources.async_create_item({"url": url, "res_type": "module"})
+        return True
+
+    primary = matches[0]
+    updates: dict[str, str] = {}
+    if primary.get("url") != url:
+        updates["url"] = url
+    if primary.get("type") != "module":
+        updates["res_type"] = "module"
+    if updates:
+        await resources.async_update_item(primary["id"], updates)
+
+    for duplicate in matches[1:]:
+        await resources.async_delete_item(duplicate["id"])
+    return True
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Загрузка интеграции и запуск менеджера."""
     manager = LoggiaManager(hass, entry)
@@ -39,24 +83,96 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = manager
 
-    if not hass.data[DOMAIN].get("_frontend_registered"):
-        js_file = Path(__file__).parent / "frontend" / f"{DOMAIN}-icons.js"
-        if js_file.is_file() and getattr(hass, "http", None) is not None:
-            url_path = f"/{DOMAIN}_static/{DOMAIN}-icons.js"
-            try:
+    frontend_dir = Path(__file__).parent / "frontend"
+    js_assets = [
+        (frontend_dir / f"{DOMAIN}-icons.js", f"/{DOMAIN}_static/{DOMAIN}-icons.js"),
+        (frontend_dir / f"{DOMAIN}-card.js", f"/{DOMAIN}_static/{DOMAIN}-card.js"),
+    ]
+    if getattr(hass, "http", None) is not None:
+        try:
+            existing_assets = [(path, url) for path, url in js_assets if path.is_file()]
+            registered_paths = hass.data[DOMAIN].setdefault(
+                "_frontend_registered_paths", set()
+            )
+            if not isinstance(registered_paths, set):
+                registered_paths = set(registered_paths)
+                hass.data[DOMAIN]["_frontend_registered_paths"] = registered_paths
+            if hass.data[DOMAIN].get("_frontend_registered") and not registered_paths:
+                # Старый флаг означал, что ранее был зарегистрирован только модуль иконок.
+                registered_paths.add(f"/{DOMAIN}_static/{DOMAIN}-icons.js")
+
+            new_assets = [
+                (path, url)
+                for path, url in existing_assets
+                if url not in registered_paths
+            ]
+            if new_assets:
                 if hasattr(hass.http, "async_register_static_paths"):
                     await hass.http.async_register_static_paths(
-                        [StaticPathConfig(url_path, str(js_file), cache_headers=False)]
+                        [
+                            StaticPathConfig(url, str(path), cache_headers=False)
+                            for path, url in new_assets
+                        ]
                     )
+                    registered_paths.update(url for _, url in new_assets)
                 elif hasattr(hass.http, "register_static_path"):
-                    hass.http.register_static_path(
-                        url_path, str(js_file), cache_headers=False
-                    )
-                ver = int(js_file.stat().st_mtime)
-                add_extra_js_url(hass, f"{url_path}?v={ver}")
-                hass.data[DOMAIN]["_frontend_registered"] = True
-            except Exception as err:
-                _LOGGER.warning("Failed to register %s custom icons: %s", DOMAIN, err)
+                    for path, url in new_assets:
+                        hass.http.register_static_path(
+                            url, str(path), cache_headers=False
+                        )
+                        registered_paths.add(url)
+                hass.data[DOMAIN]["_frontend_registered"] = bool(registered_paths)
+
+            versions: dict[str, str] = hass.data[DOMAIN].setdefault(
+                "_frontend_versions", {}
+            )
+            # Хеш загрузчика меняет URL ресурса, даже если mtime JS-файла совпал.
+            loader_revision = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()[:8]
+            lovelace_data = hass.data.get(LOVELACE_DATA)
+            storage_resource_mode = (
+                getattr(lovelace_data, "resource_mode", None) == MODE_STORAGE
+            )
+            for path, url_path in existing_assets:
+                digest = hashlib.sha256(path.read_bytes()).hexdigest()[:10]
+                version = f"{int(path.stat().st_mtime)}-{digest}-{loader_revision}"
+                previous_version = versions.get(url_path)
+                module_url = f"{url_path}?v={version}"
+
+                if storage_resource_mode:
+                    if previous_version is not None:
+                        remove_extra_js_url(
+                            hass, f"{url_path}?v={previous_version}"
+                        )
+                    try:
+                        resource_registered = await _async_upsert_lovelace_resource(
+                            hass, module_url
+                        )
+                    except Exception as err:
+                        _LOGGER.warning(
+                            "Failed to register %s as a Lovelace resource: %s",
+                            url_path,
+                            err,
+                        )
+                        resource_registered = False
+                    if not resource_registered:
+                        _LOGGER.warning(
+                            "Lovelace storage resources are unavailable; "
+                            "falling back to frontend module loading for %s",
+                            url_path,
+                        )
+                        add_extra_js_url(hass, module_url)
+                elif previous_version != version:
+                    if previous_version is not None:
+                        remove_extra_js_url(
+                            hass, f"{url_path}?v={previous_version}"
+                        )
+                    add_extra_js_url(hass, module_url)
+
+                versions[url_path] = version
+        except Exception as err:
+            _LOGGER.warning(
+                "Failed to register %s frontend assets: %s", DOMAIN, err
+            )
 
     dev_reg = dr.async_get(hass)
     main_device = dev_reg.async_get_or_create(

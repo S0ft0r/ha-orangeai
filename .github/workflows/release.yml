@@ -1,4 +1,5 @@
 name: Release
+run-name: Release ${{ github.event.inputs.tag || github.ref_name }}
 
 on:
   push:
@@ -7,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Тег релиза (например, v0.1.20)"
+        description: "Тег релиза (например, v0.1.22)"
         required: true
-        default: "v0.1.20"
+        default: "v0.1.22"
       prerelease:
         description: "Отметить как Pre-release (альфа/бета)"
         type: boolean
@@ -90,7 +91,7 @@ jobs:
           else
             gh release create "$TAG" orry.zip \
               --target "${{ github.sha }}" \
-              --title "Home Orangery $TAG" \
+              --title "Домашняя оранжерея $TAG" \
               --notes-file release_notes.md \
               $PRERELEASE_FLAG
           fi

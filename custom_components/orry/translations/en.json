@@ -29,24 +29,18 @@
       },
       "time": {
         "title": "Schedule and sun",
-        "description": "Configure automatic sunrise opening, sunset closing, and the work cycle (5/2 workweek by default, 2/2, 3/3 shifts, etc.).",
+        "description": "Configure automatic sunrise opening and sunset closing times.",
         "data": {
           "open_at_sunrise": "Open at sunrise",
           "up_time_workday": "But on weekdays no earlier than",
           "up_time_weekend": "But on weekends no earlier than",
+          "up_time_daily": "But not earlier than",
           "close_at_sunset": "Close at sunset",
-          "down_time": "But no later than",
-          "work_days": "Consecutive workdays",
-          "off_days": "Consecutive days off",
-          "cycle_start_date": "First workday of cycle",
-          "use_holidays": "Use weekend schedule on public holidays",
-          "up_time_daily": "But not earlier than"
+          "down_time": "But no later than"
         },
         "data_description": {
           "up_time_weekend": "Blinds will open at the specified time if “Open at sunrise” is unchecked.",
-          "down_time": "Blinds will close at the specified time if “Close at sunset” is unchecked.",
-          "cycle_start_date": "For a standard Mon–Fri workweek, leave any Monday; for shift schedules (2/2, 3/3, 1/3), select the first workday of your shift.",
-          "use_holidays": "Automatically accounts for official public holidays and transferred days off based on the country set in Home Assistant."
+          "down_time": "Blinds will close at the specified time if “Close at sunset” is unchecked."
         }
       },
       "sun_protect": {
@@ -198,16 +192,10 @@
           "phytolamp_on_time_workday": "Turn on lighting on weekdays at",
           "phytolamp_on_time_weekend": "Turn on lighting on weekends at",
           "phytolamp_off_time": "Turn off lighting at",
-          "work_days": "Consecutive workdays",
-          "off_days": "Consecutive days off",
-          "cycle_start_date": "First workday of cycle",
-          "use_holidays": "Use weekend schedule on public holidays",
           "phytolamp_on_time_daily": "Turn on lighting at"
         },
         "data_description": {
-          "phytolamp_extras": "Select parameters to configure separately for plant lighting.",
-          "cycle_start_date": "For a standard Mon–Fri workweek, leave any Monday; for shift schedules (2/2, 3/3, 1/3), select the first workday of your shift.",
-          "use_holidays": "Automatically accounts for official public holidays and transferred days off based on the country set in Home Assistant."
+          "phytolamp_extras": "Select parameters to configure separately for plant lighting."
         }
       },
       "phytolamp_sun": {
@@ -263,6 +251,20 @@
         "description": "Specify the soil moisture threshold (scheduled watering is skipped when exceeded) and map soil moisture sensors to the selected valves.",
         "data": {
           "watering_soil_threshold": "Do not water if moisture is above"
+        }
+      },
+      "work_week": {
+        "title": "Work week",
+        "description": "Configure the alternation of workdays and days off (5/2 workweek by default, 2/2, 3/3 shifts, etc.) and public holiday handling.",
+        "data": {
+          "work_days": "Consecutive workdays",
+          "off_days": "Consecutive days off",
+          "cycle_start_date": "First workday of cycle",
+          "use_holidays": "Use weekend schedule on public holidays"
+        },
+        "data_description": {
+          "cycle_start_date": "For a standard Mon–Fri workweek, leave any Monday; for shift schedules (2/2, 3/3, 1/3), select the first workday of your shift.",
+          "use_holidays": "Automatically accounts for official public holidays and transferred days off based on the country set in Home Assistant."
         }
       }
     },
@@ -398,23 +400,19 @@
         }
       },
       "time": {
-        "title": "Work schedule and holidays",
-        "description": "Configure the work cycle (5/2 by default, 2/2, 3/3, 1/3, etc.) and public holiday handling.",
+        "title": "Schedule and sun",
+        "description": "Configure automatic sunrise opening and sunset closing times.",
         "data": {
           "open_at_sunrise": "Open at sunrise",
-          "up_time_workday": "But on workdays not earlier than",
-          "up_time_weekend": "But on weekends not earlier than",
+          "up_time_workday": "But on weekdays no earlier than",
+          "up_time_weekend": "But on weekends no earlier than",
+          "up_time_daily": "But not earlier than",
           "close_at_sunset": "Close at sunset",
-          "down_time": "But not later than",
-          "work_days": "Consecutive workdays",
-          "off_days": "Consecutive days off",
-          "cycle_start_date": "First workday of cycle",
-          "use_holidays": "Use weekend schedule on public holidays",
-          "up_time_daily": "But not earlier than"
+          "down_time": "But no later than"
         },
         "data_description": {
-          "cycle_start_date": "For a standard Mon–Fri workweek, leave any Monday; for shift schedules (2/2, 3/3, 1/3), select the first workday of your shift.",
-          "use_holidays": "Automatically accounts for official public holidays and transferred days off based on the country set in Home Assistant."
+          "up_time_weekend": "Blinds will open at the specified time if “Open at sunrise” is unchecked.",
+          "down_time": "Blinds will close at the specified time if “Close at sunset” is unchecked."
         }
       },
       "repeats": {
@@ -466,16 +464,10 @@
           "phytolamp_on_time_workday": "Turn on lighting on weekdays at",
           "phytolamp_on_time_weekend": "Turn on lighting on weekends at",
           "phytolamp_off_time": "Turn off lighting at",
-          "work_days": "Consecutive workdays",
-          "off_days": "Consecutive days off",
-          "cycle_start_date": "First workday of cycle",
-          "use_holidays": "Use weekend schedule on public holidays",
           "phytolamp_on_time_daily": "Turn on lighting at"
         },
         "data_description": {
-          "phytolamp_extras": "Select parameters to configure separately for plant lighting.",
-          "cycle_start_date": "For a standard Mon–Fri workweek, leave any Monday; for shift schedules (2/2, 3/3, 1/3), select the first workday of your shift.",
-          "use_holidays": "Automatically accounts for official public holidays and transferred days off based on the country set in Home Assistant."
+          "phytolamp_extras": "Select parameters to configure separately for plant lighting."
         }
       },
       "phytolamp_sun": {
@@ -527,6 +519,20 @@
         "description": "Map soil moisture sensors to the selected valves (leave empty if a zone has no sensor).",
         "data": {
           "watering_soil_threshold": "Do not water if moisture is above"
+        }
+      },
+      "work_week": {
+        "title": "Work week",
+        "description": "Configure the alternation of workdays and days off (5/2 workweek by default, 2/2, 3/3 shifts, etc.) and public holiday handling.",
+        "data": {
+          "work_days": "Consecutive workdays",
+          "off_days": "Consecutive days off",
+          "cycle_start_date": "First workday of cycle",
+          "use_holidays": "Use weekend schedule on public holidays"
+        },
+        "data_description": {
+          "cycle_start_date": "For a standard Mon–Fri workweek, leave any Monday; for shift schedules (2/2, 3/3, 1/3), select the first workday of your shift.",
+          "use_holidays": "Automatically accounts for official public holidays and transferred days off based on the country set in Home Assistant."
         }
       }
     },
