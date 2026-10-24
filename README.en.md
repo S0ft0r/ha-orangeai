@@ -57,7 +57,7 @@ show_position_percent: true
 title: Home Orangery
 ```
 
-`default_tab` accepts `blinds` (default), `phytolamp`, or `watering`; `title` is optional. `drive_indicator` accepts `position`, `battery`, or `none`; if omitted, no bar is shown. `show_position_percent` independently controls the shutter-position percentage and defaults to `true`. Optional `switch_icon` displays a Home Assistant icon instead of the standard toggle (for example, `mdi:power`); if omitted, the standard toggle remains. Entity icons remain configurable through Home Assistant entity settings. Open the [interactive card builder](docs/orry-builder.html) or see the [full documentation](docs/DOCUMENTATION.en.md#custom-lovelace-card) for YAML dashboard details.
+`default_tab` accepts `blinds` (default), `phytolamp`, or `watering`; `title` is optional. `drive_indicator` accepts `position`, `battery`, or `none`; if omitted, no bar is shown. `show_position_percent` independently controls the shutter-position percentage and defaults to `true`. Optional `switch_icon` displays a Home Assistant icon instead of the standard toggle (for example, `mdi:power`); if omitted, the standard toggle remains. Entity icons remain configurable through Home Assistant entity settings. Open the [interactive card builder](https://html-preview.github.io/?url=https://github.com/S0ft0r/ha-orangeai/blob/main/docs/orry-builder.html) or see the [full documentation](docs/DOCUMENTATION.en.md#custom-lovelace-card) for YAML dashboard details.
 
 ## Full documentation
 

@@ -8,7 +8,7 @@
 
 🌐 **Language:** [🇷🇺 Полная документация на русском (DOCUMENTATION.md)](DOCUMENTATION.md) | **🇬🇧 English**
 
-[Short README overview](../README.en.md) · [Interactive Lovelace YAML builder](orry-builder.html)
+[Short README overview](../README.en.md) · [Interactive Lovelace YAML builder](https://html-preview.github.io/?url=https://github.com/S0ft0r/ha-orangeai/blob/main/docs/orry-builder.html)
 
 > **Version:** 0.1.23  
 > **Manufacturer:** `OrangeAI`  

@@ -58,7 +58,7 @@ show_position_percent: true
 title: Домашняя оранжерея
 ```
 
-`default_tab`: `blinds` (по умолчанию), `phytolamp` или `watering`; `title` задаёт собственный заголовок. `drive_indicator`: `position`, `battery` или `none` (без полосы; если параметр не задан, полосы нет). `show_position_percent` независимо управляет процентом положения и по умолчанию равен `true`. Необязательный `switch_icon` задаёт иконку Home Assistant вместо стандартного переключателя (например, `mdi:power`); если параметр не задан, остаётся штатный переключатель. Иконки сущностей настраиваются штатно в Home Assistant. Открыть [конструктор карточки](docs/orry-builder.html) или изучить [полную документацию](docs/DOCUMENTATION.md#кастомная-карточка-lovelace).
+`default_tab`: `blinds` (по умолчанию), `phytolamp` или `watering`; `title` задаёт собственный заголовок. `drive_indicator`: `position`, `battery` или `none` (без полосы; если параметр не задан, полосы нет). `show_position_percent` независимо управляет процентом положения и по умолчанию равен `true`. Необязательный `switch_icon` задаёт иконку Home Assistant вместо стандартного переключателя (например, `mdi:power`); если параметр не задан, остаётся штатный переключатель. Иконки сущностей настраиваются штатно в Home Assistant. Открыть [конструктор карточки](https://html-preview.github.io/?url=https://github.com/S0ft0r/ha-orangeai/blob/main/docs/orry-builder.html) или изучить [полную документацию](docs/DOCUMENTATION.md#кастомная-карточка-lovelace).
 
 ## Полная документация
 
