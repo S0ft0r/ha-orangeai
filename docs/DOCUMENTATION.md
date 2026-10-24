@@ -8,7 +8,7 @@
 
 🌐 **Language:** **🇷🇺 Русский** | [🇬🇧 English full documentation](DOCUMENTATION.en.md)
 
-[Краткая версия README](../README.md) · [Интерактивный конструктор YAML-карточки](orry-builder.html)
+[Краткая версия README](../README.md) · [Интерактивный конструктор YAML-карточки](https://html-preview.github.io/?url=https://github.com/S0ft0r/ha-orangeai/blob/main/docs/orry-builder.html)
 
 > **Версия:** 0.1.23  
 > **Производитель:** `OrangeAI`  
