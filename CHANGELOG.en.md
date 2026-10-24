@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.1.23] — 2026-10-24
+
+### Added
+- **Optional `switch_icon` card setting:** the selected Home Assistant icon replaces the standard toggle; when omitted, the standard toggle is shown.
+- **Blind-drive indicator options (`drive_indicator`, `show_position_percent`)**: choose a shutter-position bar, a battery bar, or no bar; the position percentage is controlled independently.
+- **Interactive Orry Lovelace YAML builder** with a Next-sensor field, default-tab and indicator selectors, position-percent toggle, optional title and switch icon, and copyable card-level YAML.
+
+---
+
 ## [0.1.22] — 2026-10-24
 
 ### Added

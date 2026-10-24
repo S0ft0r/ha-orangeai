@@ -1,16 +1,16 @@
 # Home Orangery — Modular Blind, Plant Lighting & Watering Controller for Home Assistant
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![Version](https://img.shields.io/badge/version-0.1.22-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
+[![Version](https://img.shields.io/badge/version-0.1.23-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.8.0%2B-41BDF5.svg)](https://www.home-assistant.io/)
 [![Manufacturer](https://img.shields.io/badge/manufacturer-OrangeAI-purple.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Author](https://img.shields.io/badge/author-%40S0ft0r-orange.svg)](https://github.com/S0ft0r)
 
 🌐 **Language:** [🇷🇺 Полная документация на русском (DOCUMENTATION.md)](DOCUMENTATION.md) | **🇬🇧 English**
 
-[Short README overview](../README.en.md)
+[Short README overview](../README.en.md) · [Interactive Lovelace YAML builder](orry-builder.html)
 
-> **Version:** 0.1.22  
+> **Version:** 0.1.23  
 > **Manufacturer:** `OrangeAI`  
 > **Author:** [Softor (@S0ft0r)](https://github.com/S0ft0r)
 
@@ -80,17 +80,42 @@ After installation, use the official badge to start setup, or go to **Settings �
 
 ## Custom Lovelace Card
 
-The integration includes a full `custom:orry-card` in a Home Assistant style: a header, summary tiles, and tabs for the enabled **Blinds**, **Lighting**, and **Watering** modules. The tabs provide grouped blind controls, configured light controls, auto-watering switches, a schedule summary, and manual dosed watering.
+The integration includes a full `custom:orry-card` in a Home Assistant style: a header, summary tiles, and tabs for the enabled **Blinds**, **Lighting**, and **Watering** modules. The tabs provide grouped blind controls, configured light controls, auto-watering switches, a schedule summary, and manual dosed watering. The visible tabs are determined by enabled modules; there is no separate `mode` option.
 
-- In Lovelace **Storage** mode the card resource is registered automatically; in YAML mode the integration loads the JS module through the frontend.
-- In the visual editor, select the **Next** sensor from the main device of the desired Orry configuration. The card discovers the related entities on the main device and its sub-devices.
-- If Home Assistant has multiple Orry configurations, select the corresponding Next sensor for each card. Disabled modules are hidden. Set `default_tab` to `blinds`, `phytolamp`, or `watering` to choose the opening tab; `title` can override the card title.
+- In Lovelace **Storage** mode the card resource is registered automatically; in YAML mode the integration loads the JS module through the frontend. Do not add the resource manually.
+- In the visual editor, select the main device's **Next** sensor for the desired Orry configuration. The card discovers related entities on the main device and its sub-devices.
+- Use the matching **Next** sensor for each Orry configuration. If Home Assistant has multiple orangery configurations, set `entity` explicitly on each card to bind it to the correct one; other related entities are discovered automatically.
 
-Example YAML for a single Orry configuration:
+### Configure the card directly in YAML
+
+In a YAML dashboard, add the card as an item in the `cards:` list of the desired view. This example shows a view with the watering tab selected initially:
 
 ```yaml
-type: custom:orry-card
+views:
+  - title: Orangery
+    path: orangery
+    cards:
+      - type: custom:orry-card
+        entity: sensor.orangery_next_action
+        default_tab: watering
+        drive_indicator: position
+        show_position_percent: true
+        title: Home Orangery
 ```
+
+The `entity` value above is an example. Replace `sensor.orangery_next_action` with the actual entity ID of the **Next** sensor on the main device for the desired Orry configuration (find it under **Settings → Devices & services → Entities**). If editing only one card's YAML in Home Assistant, paste the card configuration starting at `type:` without the `views:` or `cards:` wrapper. When editing an existing YAML dashboard, add the card to its existing `cards:` list rather than creating a second root-level `views:` block.
+
+| Option | Required? | Allowed values and purpose |
+| :--- | :--- | :--- |
+| `type` | Yes | Always `custom:orry-card`. |
+| `entity` | Required in the visual editor; recommended in YAML | Entity ID of the main device's **Next** sensor for the selected configuration. With one configuration the card can try to find it automatically; with multiple configurations, set `entity` explicitly on each card. |
+| `default_tab` | No; defaults to `blinds` | Initial tab: `blinds`, `phytolamp` (lighting), or `watering`. If that module is disabled, the first available tab opens. |
+| `drive_indicator` | No; if omitted, no bar is shown | `position` shows a blue shutter-position bar; `battery` shows a battery bar (green at 45%+, yellow 35–44%, orange 15–34%, red below 15%); `none` hides the bar. |
+| `show_position_percent` | No; defaults to `true` | Shows the numeric shutter position independently of the bar mode; it always represents shutter position, not battery charge. |
+| `title` | No | Custom card title. If omitted, the main Orry device name is used. |
+| `switch_icon` | No | A Home Assistant icon (for example, `mdi:power`) that replaces the standard toggle for the lighting and watering switches. If omitted, the standard toggle is shown. |
+
+Disabled modules are hidden automatically, so each card shows only the tabs active for its Orry configuration.
 
 ## Key Features
 

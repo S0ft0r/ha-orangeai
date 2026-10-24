@@ -4,7 +4,7 @@
  */
 
 const CARD_TYPE = "orry-card";
-const CARD_VERSION = "0.1.22";
+const CARD_VERSION = "0.1.23";
 const DOMAIN = "orry";
 
 const ENTITY_KEYS = [
@@ -315,6 +315,13 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/\"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function haIcon(iconName) {
+  const safeName = String(iconName || "").trim();
+  return safeName
+    ? `<ha-icon icon="${escapeHtml(safeName)}" aria-hidden="true"></ha-icon>`
+    : "";
 }
 
 function languageFor(hass) {
@@ -654,7 +661,7 @@ const CARD_STYLES = `
     cursor: pointer;
   }
   .action-btn svg { width: 14px; height: 14px; color: var(--secondary-text-color); }
-  .action-btn:disabled, .toggle:disabled, .watering-select:disabled { cursor: default; opacity: .45; }
+  .action-btn:disabled, .toggle:disabled, .switch-icon-button:disabled, .watering-select:disabled { cursor: default; opacity: .45; }
   .section-label {
     display: flex;
     align-items: center;
@@ -688,12 +695,18 @@ const CARD_STYLES = `
     background: rgba(3, 169, 244, 0.08);
     color: var(--primary-color, #03a9f4);
   }
-  .entity-icon svg { width: 16px; height: 16px; }
+  .entity-icon.entity-state-icon.is-on { color: var(--state-icon-color, #fdd835); background: rgba(253, 216, 53, .12); }
+  .entity-icon.entity-state-icon.is-off { color: var(--secondary-text-color); background: var(--orry-chip-bg); }
+  .entity-icon svg, .entity-icon ha-icon { width: 16px; height: 16px; --mdc-icon-size: 16px; }
   .entity-name { overflow: hidden; font-size: 12px; font-weight: 500; white-space: nowrap; text-overflow: ellipsis; }
   .entity-state { margin-top: 2px; color: var(--secondary-text-color); font-size: 10px; }
   .entity-value { color: var(--primary-text-color); font-size: 12px; font-weight: 600; white-space: nowrap; }
   .mini-track { width: 78px; height: 4px; margin-top: 5px; overflow: hidden; border-radius: 999px; background: var(--orry-chip-bg); }
   .mini-fill { height: 100%; border-radius: inherit; background: var(--primary-color, #03a9f4); }
+  .mini-fill.drive-battery-green { background: #4caf50; }
+  .mini-fill.drive-battery-yellow { background: #fdd835; }
+  .mini-fill.drive-battery-orange { background: #ff9800; }
+  .mini-fill.drive-battery-red { background: #f44336; }
   .empty-inline { padding: 14px 4px; color: var(--secondary-text-color); font-size: 12px; text-align: center; }
   .panel { display: none; }
   .panel.active { display: block; }
@@ -709,9 +722,30 @@ const CARD_STYLES = `
   .toggle-row:last-child { border-bottom: 0; }
   .toggle-label { font-size: 12px; font-weight: 500; }
   .toggle-sub { margin-top: 2px; color: var(--secondary-text-color); font-size: 10px; }
+  .toggle-main { min-width: 0; display: flex; align-items: center; gap: 9px; }
+  .switch-icon-button {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--secondary-text-color);
+    cursor: pointer;
+    transition: color .15s ease, background .15s ease;
+  }
+  .switch-icon-button:hover { background: var(--orry-row-hover); }
+  .switch-icon-button.on { color: var(--state-icon-color, #fdd835); }
+  .switch-icon-button ha-icon { width: 20px; height: 20px; --mdc-icon-size: 20px; }
+  .switch-icon-button:focus-visible, .toggle:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 2px; }
   .toggle {
     width: 36px;
     height: 21px;
+    flex: 0 0 36px;
     padding: 2px;
     border: 0;
     border-radius: 999px;
@@ -798,6 +832,8 @@ class OrryCard extends HTMLElement {
     return {
       entity: findDefaultAnchor(hass),
       default_tab: "blinds",
+      drive_indicator: "position",
+      show_position_percent: true,
     };
   }
 
@@ -829,6 +865,26 @@ class OrryCard extends HTMLElement {
           },
         },
         { name: "title", selector: { text: {} } },
+        { name: "switch_icon", selector: { icon: {} } },
+        {
+          name: "drive_indicator",
+          default: "position",
+          selector: {
+            select: {
+              mode: "dropdown",
+              options: [
+                { value: "position", label: "Положение шторы" },
+                { value: "battery", label: "Заряд батареи" },
+                { value: "none", label: "Без индикатора" },
+              ],
+            },
+          },
+        },
+        {
+          name: "show_position_percent",
+          default: true,
+          selector: { boolean: {} },
+        },
       ],
       computeLabel: (schema) => {
         switch (schema.name) {
@@ -838,14 +894,31 @@ class OrryCard extends HTMLElement {
             return "Вкладка по умолчанию";
           case "title":
             return "Свой заголовок (необязательно)";
+          case "switch_icon":
+            return "Иконка вместо переключателя (необязательно)";
+          case "drive_indicator":
+            return "Индикатор приводов штор";
+          case "show_position_percent":
+            return "Показывать процент положения штор";
           default:
             return schema.name;
         }
       },
-      computeHelper: (schema) =>
-        schema.name === "entity"
-          ? "Выберите сенсор «Далее» с основного устройства. Карточка найдёт остальные сущности этой конфигурации Orry автоматически."
-          : undefined,
+      computeHelper: (schema) => {
+        if (schema.name === "entity") {
+          return "Выберите сенсор «Далее» с основного устройства. Карточка найдёт остальные сущности этой конфигурации Orry автоматически.";
+        }
+        if (schema.name === "drive_indicator") {
+          return "Выберите одну полосу: положение шторы, заряд батареи или отсутствие полосы.";
+        }
+        if (schema.name === "switch_icon") {
+          return "Если не задана, отображается стандартный переключатель; если задана — указанная иконка вместо него.";
+        }
+        if (schema.name === "show_position_percent") {
+          return "Показ процента положения не зависит от выбранной полосы и всегда относится к положению шторы.";
+        }
+        return undefined;
+      },
     };
   }
 
@@ -853,6 +926,7 @@ class OrryCard extends HTMLElement {
     if (!config) throw new Error("A card configuration is required");
     this._config = {
       default_tab: "blinds",
+      show_position_percent: true,
       ...config,
     };
     if (!this._userSwitchedTab) {
@@ -1113,6 +1187,43 @@ class OrryCard extends HTMLElement {
     return Number.isFinite(number) ? Math.max(0, Math.min(100, Math.round(number))) : null;
   }
 
+  _percentValue(raw) {
+    if (raw === null || raw === undefined || raw === "") return null;
+    const match = String(raw).match(/-?\d+(?:[.,]\d+)?/);
+    if (!match) return null;
+    const value = Number(match[0].replace(",", "."));
+    return Number.isFinite(value) ? Math.max(0, Math.min(100, Math.round(value))) : null;
+  }
+
+  _blindBatteryPercent(bundle, entityId, state) {
+    for (const key of ["battery", "battery_level"]) {
+      const direct = this._percentValue(state?.attributes?.[key]);
+      if (direct !== null) return direct;
+    }
+
+    const batteryAttributes = this._state(bundle, "battery")?.attributes || {};
+    const friendlyName = state?.attributes?.friendly_name || this._entityName(entityId);
+    const candidates = [
+      friendlyName,
+      `${friendlyName} (${entityId})`,
+      entityId,
+      entityId?.split(".").pop(),
+    ].filter(Boolean);
+    for (const candidate of candidates) {
+      const value = this._percentValue(batteryAttributes[candidate]);
+      if (value !== null) return value;
+    }
+
+    const normalizedCandidates = new Set(candidates.map((value) => String(value).trim().toLowerCase()));
+    for (const [name, value] of Object.entries(batteryAttributes)) {
+      if (normalizedCandidates.has(String(name).trim().toLowerCase())) {
+        const percent = this._percentValue(value);
+        if (percent !== null) return percent;
+      }
+    }
+    return null;
+  }
+
   _render() {
     if (!this.shadowRoot) return;
     const bundle = this._bundle || this._resolveEntities();
@@ -1276,23 +1387,44 @@ class OrryCard extends HTMLElement {
     const summary = `${openCount} ${t("activeDrives")} · ${errors} ${t("errors")}`;
     const coverAvailable = Boolean(coverId && cover && !isUnavailable(cover.state));
 
+    const indicatorMode = ["position", "battery"].includes(this._config?.drive_indicator)
+      ? this._config.drive_indicator
+      : "none";
+    const showPositionPercent = this._config?.show_position_percent !== false;
     const rows = active
       .map((entityId) => {
         const state = this._hass.states?.[entityId];
         const position = this._position(state);
-        const detail =
-          position !== null
-            ? `${position}%`
-            : this._displayState(state, t("unavailable"));
+        const battery = this._blindBatteryPercent(bundle, entityId, state);
         const name = this._entityName(entityId);
+        let indicator = "";
+
+        if (indicatorMode === "position" && position !== null) {
+          indicator = `<div class="mini-track"><div class="mini-fill" style="width:${position}%"></div></div>`;
+        } else if (indicatorMode === "battery" && battery !== null) {
+          const colorClass = battery >= 45
+            ? "drive-battery-green"
+            : battery >= 35
+              ? "drive-battery-yellow"
+              : battery >= 15
+                ? "drive-battery-orange"
+                : "drive-battery-red";
+          indicator = `<div class="mini-track"><div class="mini-fill ${colorClass}" style="width:${battery}%"></div></div>`;
+        }
+
+        const positionValue = position === null
+          ? `<div class="entity-value">${escapeHtml(this._displayState(state, t("unavailable")))}</div>`
+          : showPositionPercent
+            ? `<div class="entity-value">${position}%</div>`
+            : "";
         return `
           <div class="entity-row clickable" data-more-info="${escapeHtml(entityId)}">
             <div class="entity-icon">${icon("blinds")}</div>
             <div>
               <div class="entity-name">${escapeHtml(name)}</div>
-              ${position === null ? `<div class="entity-state">${escapeHtml(detail)}</div>` : `<div class="mini-track"><div class="mini-fill" style="width:${position}%"></div></div>`}
+              ${indicator}
             </div>
-            <div class="entity-value">${escapeHtml(detail)}</div>
+            ${positionValue}
           </div>
         `;
       })
@@ -1329,6 +1461,14 @@ class OrryCard extends HTMLElement {
     return item?.available !== false && item?.is_on !== null;
   }
 
+  _renderSwitchControl(action, entityId, label, isOn, disabled) {
+    const iconName = String(this._config?.switch_icon || "").trim();
+    const className = iconName ? "switch-icon-button" : "toggle";
+    const content = iconName ? haIcon(iconName) : "<span></span>";
+    const title = iconName ? ` title="${escapeHtml(iconName)}"` : "";
+    return `<button class="${className} ${isOn ? "on" : ""}" data-action="${escapeHtml(action)}" data-entity="${escapeHtml(entityId)}" aria-pressed="${isOn}" aria-label="${escapeHtml(label)}"${title} ${disabled ? "disabled" : ""}>${content}</button>`;
+  }
+
   _renderLightingPanel(bundle) {
     const t = (key) => this._text(key);
     const status = this._state(bundle, "phytolamp_status");
@@ -1344,13 +1484,15 @@ class OrryCard extends HTMLElement {
           item.state ||
           (state?.state === "on" ? t("lightingOn") : state?.state === "off" ? t("lightingOff") : t("unavailable"));
         const safeName = item.name || (entityId ? this._entityName(entityId) : t("moduleLighting"));
+        const entityIcon = item.icon || state?.attributes?.icon;
+        const leadingIcon = haIcon(entityIcon) || icon("light");
         return `
           <div class="toggle-row ${entityId ? "clickable" : ""}" ${entityId ? `data-more-info="${escapeHtml(entityId)}"` : ""}>
-            <div class="header-left">
-              <div class="entity-icon">${icon("light")}</div>
+            <div class="toggle-main">
+              <div class="entity-icon entity-state-icon ${isOn ? "is-on" : "is-off"}">${leadingIcon}</div>
               <div><div class="toggle-label">${escapeHtml(safeName)}</div><div class="toggle-sub">${escapeHtml(stateText)}</div></div>
             </div>
-            ${entityId ? `<button class="toggle ${isOn ? "on" : ""}" data-action="toggle-light" data-entity="${escapeHtml(entityId)}" aria-pressed="${isOn}" aria-label="${escapeHtml(safeName)}" ${!available ? "disabled" : ""}><span></span></button>` : ""}
+            ${entityId ? this._renderSwitchControl("toggle-light", entityId, safeName, isOn, !available) : ""}
           </div>
         `;
       })
@@ -1371,10 +1513,14 @@ class OrryCard extends HTMLElement {
   _renderToggleRow(label, subtitle, entityId, state) {
     const on = state?.state === "on";
     const unavailable = !state || isUnavailable(state.state);
+    const entityIcon = haIcon(state?.attributes?.icon);
     return `
       <div class="toggle-row">
-        <div><div class="toggle-label">${escapeHtml(label)}</div><div class="toggle-sub">${escapeHtml(subtitle || (on ? this._text("on") : this._text("off")))}</div></div>
-        <button class="toggle ${on ? "on" : ""}" data-action="toggle-switch" data-entity="${escapeHtml(entityId)}" aria-pressed="${on}" aria-label="${escapeHtml(label)}" ${unavailable ? "disabled" : ""}><span></span></button>
+        <div class="toggle-main">
+          ${entityIcon ? `<div class="entity-icon entity-state-icon ${on ? "is-on" : "is-off"}">${entityIcon}</div>` : ""}
+          <div><div class="toggle-label">${escapeHtml(label)}</div><div class="toggle-sub">${escapeHtml(subtitle || (on ? this._text("on") : this._text("off")))}</div></div>
+        </div>
+        ${this._renderSwitchControl("toggle-switch", entityId, label, on, unavailable)}
       </div>
     `;
   }

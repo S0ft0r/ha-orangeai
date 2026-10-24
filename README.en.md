@@ -1,14 +1,14 @@
 # Home Orangery — Home Assistant Integration
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![Version](https://img.shields.io/badge/version-0.1.22-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
+[![Version](https://img.shields.io/badge/version-0.1.23-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.8.0%2B-41BDF5.svg)](https://www.home-assistant.io/)
 [![Manufacturer](https://img.shields.io/badge/manufacturer-OrangeAI-purple.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Author](https://img.shields.io/badge/author-%40S0ft0r-orange.svg)](https://github.com/S0ft0r)
 
 🌐 **Language:** [🇷🇺 Русский](README.md) | **🇬🇧 English**
 
-> **Version:** 0.1.22  
+> **Version:** 0.1.23  
 > **Manufacturer:** `OrangeAI` · **Author:** [Softor (@S0ft0r)](https://github.com/S0ft0r)
 
 A Home Assistant integration that brings together roller blinds, plant lighting, and multi-zone watering for an orangery, winter garden, grow box, or green loggia. Enable all modules or only the ones you need.
@@ -46,13 +46,18 @@ After installation or an update, hard-refresh the browser with cache clearing so
 
 ## Lovelace card
 
-The integration includes `custom:orry-card` with **Blinds**, **Lighting**, and **Watering** tabs. In the card editor, select the **Next** sensor on the Orry main device. Related entities are discovered automatically, including entities on sub-devices. In Storage mode the resource is registered automatically.
+The integration includes `custom:orry-card` with tabs for enabled modules: **Blinds**, **Lighting**, and **Watering**. Set the **Next** sensor on the main device of the desired configuration; related entities are discovered automatically. In Storage mode the resource is registered automatically; in YAML mode the integration loads the JS module.
 
 ```yaml
 type: custom:orry-card
+entity: sensor.orangery_next_action  # replace with your configuration's Next sensor ID
+default_tab: watering
+drive_indicator: position
+show_position_percent: true
+title: Home Orangery
 ```
 
-Use `default_tab` to choose the opening tab (`blinds`, `phytolamp`, or `watering`); `title` overrides the card title.
+`default_tab` accepts `blinds` (default), `phytolamp`, or `watering`; `title` is optional. `drive_indicator` accepts `position`, `battery`, or `none`; if omitted, no bar is shown. `show_position_percent` independently controls the shutter-position percentage and defaults to `true`. Optional `switch_icon` displays a Home Assistant icon instead of the standard toggle (for example, `mdi:power`); if omitted, the standard toggle remains. Entity icons remain configurable through Home Assistant entity settings. Open the [interactive card builder](docs/orry-builder.html) or see the [full documentation](docs/DOCUMENTATION.en.md#custom-lovelace-card) for YAML dashboard details.
 
 ## Full documentation
 
