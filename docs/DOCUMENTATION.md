@@ -10,7 +10,7 @@
 
 [Краткая версия README](../README.md) · [Открыть интерактивный конструктор YAML-карточки](https://html-preview.github.io/?url=https://github.com/S0ft0r/ha-orangeai/blob/main/docs/orry-builder.html)
 
-> **Версия:** 0.1.26  
+> **Версия:** 0.1.26.1  
 > **Производитель:** `OrangeAI`  
 > **Автор:** [Softor (@S0ft0r)](https://github.com/S0ft0r)  
 > **Специально для сообщества:** [4PDA](https://4pda.to/forum/index.php?showtopic=871505&view=findpost&p=143572987)

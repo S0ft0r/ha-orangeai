@@ -14,9 +14,14 @@
     "http",
     "lovelace"
   ],
+  "categories": [
+    "garden_plants",
+    "blinds_curtains",
+    "lighting"
+  ],
   "documentation": "https://github.com/S0ft0r/ha-orangeai",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/S0ft0r/ha-orangeai/issues",
   "requirements": [],
-  "version": "0.1.26"
+  "version": "0.1.26.1"
 }
