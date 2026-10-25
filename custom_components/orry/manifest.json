@@ -4,6 +4,11 @@
   "after_dependencies": [
     "mqtt"
   ],
+  "categories": [
+    "garden_plants",
+    "blinds_curtains",
+    "lighting"
+  ],
   "codeowners": [
     "@S0ft0r"
   ],
@@ -13,11 +18,6 @@
     "frontend",
     "http",
     "lovelace"
-  ],
-  "categories": [
-    "garden_plants",
-    "blinds_curtains",
-    "lighting"
   ],
   "documentation": "https://github.com/S0ft0r/ha-orangeai",
   "iot_class": "local_push",

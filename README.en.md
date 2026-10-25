@@ -1,14 +1,14 @@
 # Home Orangery — Home Assistant Integration
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![Version](https://img.shields.io/badge/version-0.1.26-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
+[![Version](https://img.shields.io/badge/version-0.1.26.1-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.8.0%2B-41BDF5.svg)](https://www.home-assistant.io/)
 [![Manufacturer](https://img.shields.io/badge/manufacturer-OrangeAI-purple.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Author](https://img.shields.io/badge/author-%40S0ft0r-orange.svg)](https://github.com/S0ft0r)
 
 🌐 **Language:** [🇷🇺 Русский](README.md) | **🇬🇧 English**
 
-> **Version:** 0.1.26  
+> **Version:** 0.1.26.1  
 > **Manufacturer:** `OrangeAI` · **Author:** [Softor (@S0ft0r)](https://github.com/S0ft0r)
 
 A Home Assistant integration that brings together roller blinds, plant lighting, and multi-zone watering for an orangery, winter garden, grow box, or green loggia. Enable all modules or only the ones you need.

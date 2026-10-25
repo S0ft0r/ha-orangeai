@@ -7,6 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.1.26.1] — 2026-10-25
+
+### Added
+- Added categories to `manifest.json` to address the HACS Validation warning.
+
+### Changed
+- Synchronized the integration and frontend card versions to `0.1.26.1`.
+
+---
+
 ## [0.1.26] — 2026-10-25
 
 ### Fixed
