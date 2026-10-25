@@ -4,7 +4,7 @@
  */
 
 const CARD_TYPE = "orry-card";
-const CARD_VERSION = "0.1.25";
+const CARD_VERSION = "0.1.26";
 const DOMAIN = "orry";
 
 const ENTITY_KEYS = [

@@ -74,6 +74,36 @@ async def _async_upsert_lovelace_resource(hass: HomeAssistant, url: str) -> bool
     return True
 
 
+def _collect_frontend_asset_metadata(
+    js_assets: list[tuple[Path, str]],
+) -> list[tuple[Path, str, str]]:
+    """Собрать существующие JS-файлы и их версии вне event loop.
+
+    Проверки путей, чтение файлов и stat() блокирующие, поэтому функция
+    вызывается через hass.async_add_executor_job().
+    """
+    existing_assets: list[tuple[Path, str, str]] = []
+    for path, url in js_assets:
+        try:
+            if not path.is_file():
+                continue
+            mtime = int(path.stat().st_mtime)
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()[:10]
+        except OSError as err:
+            _LOGGER.debug("Skipping unavailable frontend asset %s: %s", path, err)
+            continue
+        existing_assets.append((path, url, f"{mtime}-{digest}"))
+
+    if not existing_assets:
+        return []
+
+    loader_revision = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()[:8]
+    return [
+        (path, url, f"{asset_revision}-{loader_revision}")
+        for path, url, asset_revision in existing_assets
+    ]
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Загрузка интеграции и запуск менеджера."""
     manager = LoggiaManager(hass, entry)
@@ -90,7 +120,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     ]
     if getattr(hass, "http", None) is not None:
         try:
-            existing_assets = [(path, url) for path, url in js_assets if path.is_file()]
+            frontend_assets = await hass.async_add_executor_job(
+                _collect_frontend_asset_metadata, js_assets
+            )
+            existing_assets = [
+                (path, url) for path, url, _version in frontend_assets
+            ]
             registered_paths = hass.data[DOMAIN].setdefault(
                 "_frontend_registered_paths", set()
             )
@@ -126,15 +161,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             versions: dict[str, str] = hass.data[DOMAIN].setdefault(
                 "_frontend_versions", {}
             )
-            # Хеш загрузчика меняет URL ресурса, даже если mtime JS-файла совпал.
-            loader_revision = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()[:8]
+            # Версии рассчитаны в executor вместе с проверкой наличия файлов.
             lovelace_data = hass.data.get(LOVELACE_DATA)
             storage_resource_mode = (
                 getattr(lovelace_data, "resource_mode", None) == MODE_STORAGE
             )
-            for path, url_path in existing_assets:
-                digest = hashlib.sha256(path.read_bytes()).hexdigest()[:10]
-                version = f"{int(path.stat().st_mtime)}-{digest}-{loader_revision}"
+            for _path, url_path, version in frontend_assets:
                 previous_version = versions.get(url_path)
                 module_url = f"{url_path}?v={version}"
 

@@ -7,6 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.1.26] — 2026-10-25
+
+### Fixed
+- Frontend asset existence checks, file hashing, and modification-time reads now run in the executor, preventing filesystem I/O from blocking Home Assistant's event loop during setup.
+
+### Changed
+- Synchronized the integration and frontend card version to `0.1.26`.
+
+---
+
 ## [0.1.25] — 2026-10-25
 
 ### Fixed
