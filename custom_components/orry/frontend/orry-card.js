@@ -4,7 +4,7 @@
  */
 
 const CARD_TYPE = "orry-card";
-const CARD_VERSION = "0.1.24.2";
+const CARD_VERSION = "0.1.25";
 const DOMAIN = "orry";
 
 const ENTITY_KEYS = [
@@ -211,6 +211,8 @@ const TEXT = {
     setBlindPosition: "Установить положение активных штор",
     totalDevices: "Всего устройств",
     enabledDevices: "Включено",
+    configuredZones: "Настроено направлений",
+    activeZones: "активно",
     turnLightingOn: "Включить подсветку",
     turnLightingOff: "Выключить подсветку",
     lightingOn: "Включена",
@@ -264,6 +266,8 @@ const TEXT = {
     setBlindPosition: "Set active blinds position",
     totalDevices: "Total devices",
     enabledDevices: "On",
+    configuredZones: "Configured zones",
+    activeZones: "active",
     turnLightingOn: "Turn lighting on",
     turnLightingOff: "Turn lighting off",
     lightingOn: "On",
@@ -529,11 +533,10 @@ const CARD_STYLES = `
   .header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 10px;
     padding: 14px 16px 10px;
   }
-  .header-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .header-left { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 auto; }
   .header-icon {
     width: 42px;
     height: 42px;
@@ -546,7 +549,7 @@ const CARD_STYLES = `
     color: var(--primary-color, #03a9f4);
   }
   .header-icon svg { width: 23px; height: 23px; }
-  .header-titles { min-width: 0; }
+  .header-titles { min-width: 0; flex: 1 1 auto; }
   .header-title {
     overflow: hidden;
     font-size: 16px;
@@ -579,25 +582,6 @@ const CARD_STYLES = `
     .header-subtitle.is-scrolling .header-subtitle-track { animation: none; will-change: auto; }
     .header-subtitle.is-scrolling .header-subtitle-clone { display: none; }
   }
-  .next-pill {
-    max-width: calc(100% - 36px);
-    min-width: 0;
-    flex: 0 1 auto;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 9px;
-    border: 1px solid rgba(3, 169, 244, 0.23);
-    border-radius: 999px;
-    background: rgba(3, 169, 244, 0.08);
-    color: var(--primary-color, #03a9f4);
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .next-pill svg { width: 15px; height: 15px; flex: 0 0 15px; }
-  .next-pill span { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-
   .kpi-grid {
     display: grid;
     grid-template-columns: repeat(var(--module-count, 3), minmax(0, 1fr));
@@ -616,17 +600,31 @@ const CARD_STYLES = `
     background: var(--orry-tile-bg);
   }
   .kpi-top { display: flex; align-items: center; justify-content: space-between; gap: 5px; color: var(--secondary-text-color); font-size: 11px; }
-  .kpi-top svg, .kpi-top ha-icon { width: 16px; height: 16px; flex: 0 0 16px; --mdc-icon-size: 16px; }
-  .kpi-state-icon { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
-  .kpi-state-icon ha-icon { width: 16px; height: 16px; --mdc-icon-size: 16px; }
-  .kpi-main { min-height: 18px; overflow: hidden; font-size: 13px; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; }
+  .kpi-main { min-height: 22px; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; }
   .kpi-sub { overflow: hidden; color: var(--secondary-text-color); font-size: 10px; white-space: nowrap; text-overflow: ellipsis; }
   .kpi-main.blinds-kpi-main { display: block; min-height: 20px; overflow: visible; }
+  .device-count-pill {
+    min-height: 20px;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 3px 8px;
+    border: 1px solid rgba(3, 169, 244, .23);
+    border-radius: 999px;
+    color: var(--primary-color, #147aa5);
+    background: rgba(3, 169, 244, .09);
+    font-size: 10px;
+    line-height: 1;
+    font-weight: 700;
+    white-space: nowrap;
+  }
   .blinds-summary-range {
     position: relative;
     width: 100%;
     height: 4px;
-    margin: 14px 2px 13px;
+    margin: 7px 2px;
     border-radius: 999px;
     background: var(--orry-chip-bg);
   }
@@ -667,12 +665,41 @@ const CARD_STYLES = `
   .blinds-summary-range-input::-moz-range-thumb { width: 20px; height: 20px; border: 0; border-radius: 50%; background: transparent; box-shadow: none; }
   .blinds-summary-range:focus-within .blinds-range-thumb { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 2px; }
   .blinds-summary-range-input:disabled { cursor: default; }
-  .kpi-sub.blinds-kpi-sub { display: block; overflow: visible; white-space: nowrap; text-overflow: clip; }
-  .blinds-kpi-counts { display: inline-flex; align-items: center; white-space: nowrap; }
-  .kpi-main.lighting-kpi-main { visibility: hidden; }
-  .lighting-kpi-footer { display: flex; align-items: center; justify-content: space-between; gap: 5px; overflow: visible; }
-  .lighting-kpi-counts { min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
-  .lighting-kpi-button {
+  .kpi-footer { min-width: 0; width: 100%; }
+  .kpi-next-event {
+    min-width: 0;
+    width: 100%;
+    display: block;
+    overflow: hidden;
+    color: var(--secondary-text-color);
+    font-size: 10px;
+    line-height: 1.25;
+    white-space: nowrap;
+  }
+  .kpi-next-event-track { width: 100%; display: block; overflow: hidden; white-space: nowrap; }
+  .kpi-next-event-copy { width: 100%; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .kpi-next-event-clone { display: none; }
+  .kpi-next-event.is-scrolling .kpi-next-event-track {
+    width: max-content;
+    display: inline-flex;
+    align-items: center;
+    gap: 28px;
+    overflow: visible;
+    animation: event-marquee var(--event-duration, 12s) linear infinite;
+    will-change: transform;
+  }
+  .kpi-next-event.is-scrolling .kpi-next-event-copy { width: auto; flex: 0 0 auto; display: inline-block; overflow: visible; text-overflow: clip; }
+  .kpi-next-event.is-scrolling .kpi-next-event-clone { display: inline-block; }
+  .kpi-next-event.is-scrolling:hover .kpi-next-event-track,
+  .kpi-next-event.is-scrolling:focus-within .kpi-next-event-track { animation-play-state: paused; }
+  @keyframes event-marquee { to { transform: translateX(var(--event-distance, -280px)); } }
+  @media (prefers-reduced-motion: reduce) {
+    .kpi-next-event.is-scrolling .kpi-next-event-track { width: 100%; display: block; animation: none; will-change: auto; }
+    .kpi-next-event.is-scrolling .kpi-next-event-copy { width: 100%; display: block; overflow: hidden; text-overflow: ellipsis; }
+    .kpi-next-event.is-scrolling .kpi-next-event-clone { display: none; }
+  }
+  .lighting-kpi-main, .watering-kpi-main { justify-content: flex-start; gap: 8px; }
+  .lighting-kpi-button, .watering-kpi-button {
     width: 22px;
     height: 22px;
     flex: 0 0 auto;
@@ -686,10 +713,11 @@ const CARD_STYLES = `
     cursor: pointer;
   }
   .lighting-kpi-button.is-on { color: var(--state-active-color, #fdd835); }
-  .lighting-kpi-button:hover { background: var(--orry-row-hover); }
-  .lighting-kpi-button:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 1px; }
-  .lighting-kpi-button ha-icon { width: 17px; height: 17px; --mdc-icon-size: 17px; }
-  .lighting-kpi-button:disabled { cursor: default; opacity: .45; }
+  .watering-kpi-button.is-on { color: var(--primary-color, #03a9f4); }
+  .lighting-kpi-button:hover, .watering-kpi-button:hover { background: var(--orry-row-hover); }
+  .lighting-kpi-button:focus-visible, .watering-kpi-button:focus-visible { outline: 2px solid var(--primary-color, #03a9f4); outline-offset: 1px; }
+  .lighting-kpi-button ha-icon, .watering-kpi-button ha-icon { width: 17px; height: 17px; --mdc-icon-size: 17px; }
+  .lighting-kpi-button:disabled, .watering-kpi-button:disabled { cursor: default; opacity: .45; }
 
   .tabs-bar {
     display: grid;
@@ -766,7 +794,7 @@ const CARD_STYLES = `
   }
   .drive-column-icon { display: flex; align-items: center; justify-content: center; color: var(--secondary-text-color); }
   .drive-column-icon ha-icon { width: 17px; height: 17px; --mdc-icon-size: 17px; }
-  .sun-column-icon { color: var(--state-icon-color, #fdd835); }
+  .sun-column-icon { color: var(--secondary-text-color); }
   .drive-row {
     min-height: 48px;
     position: relative;
@@ -778,7 +806,13 @@ const CARD_STYLES = `
   .drive-row[data-more-info] { cursor: pointer; }
   .drive-row[data-more-info]:hover { background: var(--orry-row-hover); }
   .drive-row > * { min-width: 0; position: relative; z-index: 1; }
-  .drive-row-icon.entity-icon { width: 28px; height: 28px; }
+  .drive-row-icon.entity-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 0;
+    background: transparent;
+    color: var(--primary-color, #03a9f4);
+  }
   .drive-main { min-width: 0; }
   .drive-main-top { min-width: 0; display: flex; align-items: center; gap: 7px; }
   .drive-main-top .entity-name { min-width: 0; flex: 1; }
@@ -951,18 +985,18 @@ const CARD_STYLES = `
     .kpi-grid { padding-left: 12px; padding-right: 12px; }
     .kpi-grid.module-count-1 { grid-template-columns: 1fr; }
     .kpi-grid.module-count-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .kpi-grid.module-count-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .kpi-grid.module-count-3 .kpi-tile:last-child { grid-column: span 2; }
-    ha-card.summary-mode .kpi-grid { grid-template-columns: repeat(var(--module-count, 3), minmax(0, 1fr)); }
-    ha-card.summary-mode .kpi-tile { padding: 7px 6px; }
-    ha-card.summary-mode .kpi-top { font-size: 10px; }
-    ha-card.summary-mode .kpi-main { font-size: 12px; }
-    ha-card.summary-mode .kpi-sub { font-size: 9px; }
-    ha-card.summary-mode .kpi-grid.module-count-3 .kpi-tile:last-child { grid-column: auto; }
+    .kpi-grid.module-count-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .kpi-grid.module-count-3 .kpi-tile:last-child { grid-column: auto; }
+    .kpi-tile { padding: 7px 6px; }
+    .kpi-top { gap: 3px; font-size: 9px; }
+    .kpi-top .device-count-pill { min-height: 18px; padding: 2px 4px; font-size: 8px; }
+    .kpi-main { font-size: 12px; }
+    .kpi-sub { font-size: 9px; }
+    .device-count-pill { padding: 2px 4px; font-size: 8px; }
+    .kpi-next-event { font-size: 9px; }
     .content { padding-left: 12px; padding-right: 12px; }
     .subbar { padding-left: 12px; padding-right: 12px; }
     .tab-btn { gap: 4px; padding-left: 3px; padding-right: 3px; font-size: 11px; }
-    .next-pill { max-width: calc(100% - 36px); font-size: 10px; }
   }
   @media (max-width: 380px) {
     .drive-list { --drive-check-width: 25px; --drive-column-gap: 5px; }
@@ -982,12 +1016,12 @@ class OrryCard extends HTMLElement {
     this._activeTab = "blinds";
     this._userSwitchedTab = false;
     this._lastRenderSig = "";
-    this._subtitleObserver = null;
+    this._marqueeObserver = null;
   }
 
   disconnectedCallback() {
-    this._subtitleObserver?.disconnect();
-    this._subtitleObserver = null;
+    this._marqueeObserver?.disconnect();
+    this._marqueeObserver = null;
   }
 
   static getStubConfig(hass) {
@@ -997,6 +1031,7 @@ class OrryCard extends HTMLElement {
       default_tab: "blinds",
       drive_indicator: "position",
       show_position_percent: true,
+      scroll_text: false,
     };
   }
 
@@ -1061,6 +1096,11 @@ class OrryCard extends HTMLElement {
           default: true,
           selector: { boolean: {} },
         },
+        {
+          name: "scroll_text",
+          default: false,
+          selector: { boolean: {} },
+        },
       ],
       computeLabel: (schema) => {
         switch (schema.name) {
@@ -1078,6 +1118,8 @@ class OrryCard extends HTMLElement {
             return "Индикатор приводов штор";
           case "show_position_percent":
             return "Показывать процент положения штор";
+          case "scroll_text":
+            return "Прокручивать длинные события";
           default:
             return schema.name;
         }
@@ -1098,6 +1140,9 @@ class OrryCard extends HTMLElement {
         if (schema.name === "show_position_percent") {
           return "Показ процента положения не зависит от выбранной полосы и всегда относится к положению шторы.";
         }
+        if (schema.name === "scroll_text") {
+          return "Если включено, длинные события в мини-карточках будут прокручиваться вместо обрезания.";
+        }
         return undefined;
       },
     };
@@ -1109,9 +1154,11 @@ class OrryCard extends HTMLElement {
       mode: "full",
       default_tab: "blinds",
       show_position_percent: true,
+      scroll_text: false,
       ...config,
     };
     this._config.mode = this._config.mode === "summary" ? "summary" : "full";
+    this._config.scroll_text = this._config.scroll_text === true;
     if (!this._userSwitchedTab) {
       this._activeTab = this._config.default_tab || "blinds";
     }
@@ -1422,38 +1469,57 @@ class OrryCard extends HTMLElement {
     return matches.find((option) => option.startsWith(marker)) || matches[0] || "";
   }
 
-  _syncSubtitleMarquee() {
-    this._subtitleObserver?.disconnect();
-    this._subtitleObserver = null;
+  _syncTextMarquees() {
+    this._marqueeObserver?.disconnect();
+    this._marqueeObserver = null;
     const subtitle = this.shadowRoot?.querySelector(".header-subtitle");
-    if (!subtitle) return;
+    const eventLines = [...(this.shadowRoot?.querySelectorAll(".kpi-next-event") || [])];
+    const elements = [subtitle, ...eventLines].filter(Boolean);
+    if (!elements.length) return;
 
     const update = () => {
-      if (!subtitle.isConnected) return;
-      const copy = subtitle.querySelector(".header-subtitle-copy");
-      const clone = subtitle.querySelector(".header-subtitle-clone");
-      const text = copy?.textContent || "";
-      subtitle.title = text;
-      subtitle.setAttribute("aria-label", text);
-      const textWidth = copy?.getBoundingClientRect().width || 0;
-      const shouldScroll = textWidth > subtitle.clientWidth + 1;
-      subtitle.classList.toggle("is-scrolling", shouldScroll);
-      if (!shouldScroll) {
-        if (clone) clone.textContent = "";
-        subtitle.style.removeProperty("--subtitle-distance");
-        subtitle.style.removeProperty("--subtitle-duration");
-        return;
-      }
+      for (const element of elements) {
+        if (!element.isConnected) continue;
+        const isSubtitle = element === subtitle;
+        const copy = element.querySelector(
+          isSubtitle ? ".header-subtitle-copy" : ".kpi-next-event-copy:not(.kpi-next-event-clone)"
+        );
+        const clone = element.querySelector(
+          isSubtitle ? ".header-subtitle-clone" : ".kpi-next-event-clone"
+        );
+        const text = copy?.textContent || "";
+        element.title = text;
+        element.setAttribute("aria-label", text);
+        const textWidth = isSubtitle
+          ? copy?.getBoundingClientRect().width || 0
+          : copy?.scrollWidth || 0;
+        const shouldScroll =
+          textWidth > element.clientWidth + 1 &&
+          (isSubtitle || this._config.scroll_text === true);
+        element.classList.toggle("is-scrolling", shouldScroll);
+        if (!shouldScroll) {
+          if (clone) clone.textContent = "";
+          element.style.removeProperty(isSubtitle ? "--subtitle-distance" : "--event-distance");
+          element.style.removeProperty(isSubtitle ? "--subtitle-duration" : "--event-duration");
+          continue;
+        }
 
-      const distance = textWidth + 28;
-      if (clone) clone.textContent = text;
-      subtitle.style.setProperty("--subtitle-distance", `${-distance}px`);
-      subtitle.style.setProperty("--subtitle-duration", `${Math.max(8, distance / 30)}s`);
+        const distance = textWidth + 28;
+        if (clone) clone.textContent = text;
+        element.style.setProperty(
+          isSubtitle ? "--subtitle-distance" : "--event-distance",
+          `${-distance}px`
+        );
+        element.style.setProperty(
+          isSubtitle ? "--subtitle-duration" : "--event-duration",
+          `${Math.max(8, distance / 30)}s`
+        );
+      }
     };
 
     if (typeof ResizeObserver !== "undefined") {
-      this._subtitleObserver = new ResizeObserver(update);
-      this._subtitleObserver.observe(subtitle);
+      this._marqueeObserver = new ResizeObserver(update);
+      elements.forEach((element) => this._marqueeObserver.observe(element));
     }
     const schedule = typeof requestAnimationFrame === "function"
       ? requestAnimationFrame
@@ -1471,45 +1537,10 @@ class OrryCard extends HTMLElement {
     return this._position(this._state(bundle, "blinds"));
   }
 
-  _blindMajorityIcon(bundle) {
-    const positions = [...new Set(this._activeBlindIds(bundle))]
-      .map((entityId) => this._position(this._hass?.states?.[entityId]))
-      .filter((position) => position !== null);
-    const open = positions.filter((position) => position >= 50);
-    const closed = positions.filter((position) => position < 50);
-    const majority = open.length > closed.length
-      ? open
-      : closed.length > open.length
-        ? closed
-        : positions;
-    const representative = majority.length
-      ? majority.reduce((sum, position) => sum + position, 0) / majority.length
-      : 50;
-    const step = Math.max(0, Math.min(100, Math.round(representative / 25) * 25));
-    const isEnglish = languageFor(this._hass) === "en";
-    let label;
-    if (!positions.length) {
-      label = isEnglish ? "No active blinds" : "Нет активных штор";
-    } else if (open.length > closed.length) {
-      label = isEnglish
-        ? `Most active blinds are open; about ${step}% (${open.length} of ${positions.length})`
-        : `Большинство активных штор открыто; около ${step}% (${open.length} из ${positions.length})`;
-    } else if (closed.length > open.length) {
-      label = isEnglish
-        ? `Most active blinds are closed; about ${step}% (${closed.length} of ${positions.length})`
-        : `Большинство активных штор закрыто; около ${step}% (${closed.length} из ${positions.length})`;
-    } else {
-      label = isEnglish
-        ? `Open and closed blinds are evenly split; average about ${step}%`
-        : `Открытых и закрытых поровну; среднее положение около ${step}%`;
-    }
-    return { icon: `orry:blind-${step}`, label };
-  }
-
   _render() {
     if (!this.shadowRoot) return;
-    this._subtitleObserver?.disconnect();
-    this._subtitleObserver = null;
+    this._marqueeObserver?.disconnect();
+    this._marqueeObserver = null;
     const bundle = this._bundle || this._resolveEntities();
     const t = (key) => this._text(key);
 
@@ -1557,7 +1588,6 @@ class OrryCard extends HTMLElement {
       typeof lastAction === "string" && lastAction.trim()
         ? lastAction.trim()
         : modules.map((module) => module.title).join(" · ");
-    const nextText = this._displayState(nextState, t("noActions"));
     const detailedPanels = mode === "full"
       ? `
         <div class="tabs-bar" style="--module-count:${modules.length}">
@@ -1593,9 +1623,6 @@ class OrryCard extends HTMLElement {
               </div>
             </div>
           </div>
-          <div class="next-pill clickable" data-more-info="${escapeHtml(bundle.ids.next_action || bundle.anchorId)}" title="${escapeHtml(nextText)}">
-            ${icon("next")}<span><b>${escapeHtml(t("nextAction"))}:</b> ${escapeHtml(nextText)}</span>
-          </div>
         </div>
 
         <div class="kpi-grid module-count-${modules.length}" style="--module-count:${modules.length}">
@@ -1606,13 +1633,32 @@ class OrryCard extends HTMLElement {
       </ha-card>
     `;
     this._bindEvents(bundle);
-    this._syncSubtitleMarquee();
+    this._syncTextMarquees();
+  }
+
+  _renderKpiEvent(text) {
+    const safeText = escapeHtml(text);
+    return `
+      <div class="kpi-footer">
+        <div class="kpi-next-event" title="${safeText}" aria-label="${safeText}">
+          <span class="kpi-next-event-track">
+            <span class="kpi-next-event-copy">${safeText}</span>
+            <span class="kpi-next-event-copy kpi-next-event-clone" aria-hidden="true"></span>
+          </span>
+        </div>
+      </div>
+    `;
   }
 
   _renderKpi(module, bundle) {
     const t = (key) => this._text(key);
     const entityId = bundle.ids[module.key === "blinds" ? "blinds" : `${module.key}_status`] || "";
     const infoEntityId = entityId || bundle.anchorId;
+    const nextAttributes = this._state(bundle, "next_action")?.attributes || {};
+    const eventFor = (attribute) => {
+      const value = nextAttributes[attribute];
+      return typeof value === "string" && value.trim() ? value.trim() : t("noActions");
+    };
 
     if (module.key === "blinds") {
       const cover = this._state(bundle, "blinds");
@@ -1624,7 +1670,6 @@ class OrryCard extends HTMLElement {
       const errors = this._displayState(this._state(bundle, "error_count"), "0");
       const positionText = position === null ? "—" : `${position}%`;
       const positionLabel = `${t("averageActiveBlinds")}: ${positionText}`;
-      const iconInfo = this._blindMajorityIcon(bundle);
       const totalLabel = `${t("totalDevices")}: ${allCount}`;
       const activeLabel = `${t("activeBlinds")}: ${activeCount}`;
       const errorLabel = `${t("errors")}: ${errors}`;
@@ -1639,7 +1684,11 @@ class OrryCard extends HTMLElement {
         <div class="kpi-tile clickable" data-more-info="${escapeHtml(infoEntityId)}">
           <div class="kpi-top">
             <span>${escapeHtml(module.title)}</span>
-            <span class="kpi-state-icon" role="img" aria-label="${escapeHtml(iconInfo.label)}" title="${escapeHtml(iconInfo.label)}">${haIcon(iconInfo.icon)}</span>
+            <span class="device-count-pill blinds-kpi-counts" role="group" aria-label="${escapeHtml(accessibleCounts)}" title="${escapeHtml(accessibleCounts)}">
+              <span title="${escapeHtml(totalLabel)}">${allCount}</span><span aria-hidden="true"> / </span>
+              <span title="${escapeHtml(activeLabel)}">${activeCount}</span><span aria-hidden="true"> / </span>
+              <span title="${escapeHtml(errorLabel)}">${escapeHtml(errors)}</span>
+            </span>
           </div>
           <div class="kpi-main blinds-kpi-main">
             <div class="blinds-summary-range">
@@ -1648,17 +1697,12 @@ class OrryCard extends HTMLElement {
               <input class="blinds-summary-range-input" type="range" min="0" max="100" step="1" value="${value}" data-action="set-position" data-entity="${escapeHtml(coverId)}" aria-label="${escapeHtml(t("setBlindPosition"))}" aria-valuetext="${escapeHtml(positionText)}" title="${escapeHtml(positionLabel)}" ${coverAvailable ? "" : "disabled"}>
             </div>
           </div>
-          <div class="kpi-sub blinds-kpi-sub blinds-kpi-counts" role="group" aria-label="${escapeHtml(accessibleCounts)}">
-            <span title="${escapeHtml(totalLabel)}">${allCount}</span><span aria-hidden="true"> / </span>
-            <span title="${escapeHtml(activeLabel)}">${activeCount}</span><span aria-hidden="true"> / </span>
-            <span title="${escapeHtml(errorLabel)}">${escapeHtml(errors)}</span>
-          </div>
+          ${this._renderKpiEvent(eventFor("blind_action"))}
         </div>
       `;
     }
 
     if (module.key === "phytolamp") {
-      const status = this._state(bundle, "phytolamp_status");
       const lights = this._lights(bundle);
       const onCount = lights.filter((item) => this._lightIsOn(item)).length;
       const actionableLights = lights.filter((item) => {
@@ -1671,25 +1715,46 @@ class OrryCard extends HTMLElement {
       const pressed = onCount === 0 ? "false" : onCount === lights.length ? "true" : "mixed";
       return `
         <div class="kpi-tile clickable" data-more-info="${escapeHtml(infoEntityId)}">
-          <div class="kpi-top"><span>${escapeHtml(module.title)}</span>${haIcon("orry:phytolamp")}</div>
-          <div class="kpi-main lighting-kpi-main" aria-hidden="true">${escapeHtml(this._displayState(status))}</div>
-          <div class="kpi-sub lighting-kpi-footer">
-            <span class="lighting-kpi-counts" role="img" aria-label="${escapeHtml(countLabel)}" title="${escapeHtml(countLabel)}">${lights.length} / ${onCount}</span>
+          <div class="kpi-top">
+            <span>${escapeHtml(module.title)}</span>
+            <span class="device-count-pill" role="img" aria-label="${escapeHtml(countLabel)}" title="${escapeHtml(countLabel)}">${lights.length} / ${onCount}</span>
+          </div>
+          <div class="kpi-main lighting-kpi-main">
             <button class="lighting-kpi-button ${anyOn ? "is-on" : ""}" type="button" data-action="toggle-kpi-lights" aria-label="${escapeHtml(buttonLabel)}" aria-pressed="${pressed}" title="${escapeHtml(buttonLabel)}" ${actionableLights.length ? "" : "disabled"}>${haIcon("mdi:lightbulb-outline")}</button>
           </div>
+          ${this._renderKpiEvent(eventFor("light_action"))}
         </div>
       `;
     }
 
-    const status = this._state(bundle, "watering_status");
     const zones = this._wateringZones(bundle);
-    const value = this._displayState(status);
-    const sub = zones.length ? `${zones.length} ${t("zones")}` : t("wateringSchedule");
+    const activeCountState = this._state(bundle, "watering_active_count");
+    const activeCount = this._displayState(activeCountState, String(zones.length));
+    const totalZonesRaw = activeCountState?.attributes?.total_zones;
+    const parsedTotalZones = totalZonesRaw === null || totalZonesRaw === undefined || totalZonesRaw === ""
+      ? Number.NaN
+      : Number(totalZonesRaw);
+    const totalZones = Number.isFinite(parsedTotalZones)
+      ? Math.max(0, Math.trunc(parsedTotalZones))
+      : zones.length;
+    const countLabel = `${t("configuredZones")}: ${totalZones}, ${t("activeZones")}: ${activeCount}`;
+    const wateringSwitchId = bundle.ids.watering_enabled || "";
+    const wateringSwitch = this._state(bundle, "watering_enabled");
+    const wateringOn = wateringSwitch?.state === "on";
+    const wateringAvailable = Boolean(
+      wateringSwitchId && wateringSwitch && !isUnavailable(wateringSwitch.state)
+    );
+    const buttonLabel = `${t("autoWatering")}: ${t(wateringOn ? "on" : "off")}`;
     return `
       <div class="kpi-tile clickable" data-more-info="${escapeHtml(infoEntityId)}">
-        <div class="kpi-top"><span>${escapeHtml(module.title)}</span>${haIcon("orry:watering")}</div>
-        <div class="kpi-main" title="${escapeHtml(value)}">${escapeHtml(value)}</div>
-        <div class="kpi-sub" title="${escapeHtml(sub)}">${escapeHtml(sub)}</div>
+        <div class="kpi-top">
+          <span>${escapeHtml(module.title)}</span>
+          <span class="device-count-pill" role="img" aria-label="${escapeHtml(countLabel)}" title="${escapeHtml(countLabel)}">${totalZones} / ${escapeHtml(activeCount)}</span>
+        </div>
+        <div class="kpi-main watering-kpi-main">
+          <button class="watering-kpi-button ${wateringOn ? "is-on" : ""}" type="button" data-action="toggle-switch" data-entity="${escapeHtml(wateringSwitchId)}" aria-label="${escapeHtml(buttonLabel)}" aria-pressed="${wateringOn}" title="${escapeHtml(buttonLabel)}" ${wateringAvailable ? "" : "disabled"}>${haIcon("mdi:watering-can")}</button>
+        </div>
+        ${this._renderKpiEvent(eventFor("watering_action"))}
       </div>
     `;
   }
@@ -1836,8 +1901,8 @@ class OrryCard extends HTMLElement {
         <div class="drive-list">
           <div class="drive-list-heading" aria-label="${escapeHtml(t("drivePositions"))}">
             <span></span><span></span>
-            <span class="drive-column-icon sun-column-icon" title="${escapeHtml(t("sunProtection"))}">${haIcon("mdi:white-balance-sunny")}</span>
-            <span class="drive-column-icon" title="${escapeHtml(t("driveEnabled"))}">${haIcon("mdi:power")}</span>
+            <span class="drive-column-icon sun-column-icon" title="${escapeHtml(t("sunProtection"))}">${haIcon("orry:blind-sun")}</span>
+            <span class="drive-column-icon work-column-icon" title="${escapeHtml(t("driveEnabled"))}">${haIcon("orry:blind-pause")}</span>
           </div>
           ${rows || `<div class="empty-inline">${escapeHtml(t("noDriveData"))}</div>`}
         </div>

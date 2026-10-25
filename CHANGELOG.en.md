@@ -7,6 +7,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.1.25] — 2026-10-25
+
+### Fixed
+- Repeated blind movement commands now use each drive's actual direction: opening approaches the target from below, and closing approaches it from above.
+- Every position command, including the diagnostic nudge, is clamped to the configured `down_limit`/`up_limit`; a 25% target with a 25% lower limit no longer produces an invalid 24% command.
+- The exact target is sent again after the diagnostic nudge; movement is considered successful only at the exact target, not merely on the correct side.
+
+### Changed
+- Synchronized the integration and frontend card version to `0.1.25`.
+
+---
+
+## [0.1.24.4] — 2026-10-25
+
+### Changed
+- Removed the blue tile backgrounds from the five position-aware shutter icons in the detailed blinds list.
+- Replaced the sun-protection and “In work” column header icons with the approved Orry icons `orry:blind-sun` and `orry:blind-pause`, matching the builder.
+- Synchronized the integration and frontend card version to `0.1.24.4`.
+
+---
+
+## [0.1.24.3] — 2026-10-25
+
+### Added
+- Ported the approved header and three mini-card layout into the production `custom:orry-card`; `full` and `summary` share the same upper section. Removed the separate “Next” pill from the right side of the header while retaining the `last_action` subtitle.
+- Added live event lines from the Next sensor attributes (`blind_action`, `light_action`, and `watering_action`), module counters, and available lighting/auto-watering controls; the watering button uses `mdi:watering-can`.
+- Added the `scroll_text` YAML option (default `false`) to scroll overflowing event lines. Detailed panels, including the watering panel, were left unchanged.
+
+### Changed
+- Synchronized the integration and frontend card version to `0.1.24.3`.
+
+---
+
 ## [0.1.24.2] — 2026-10-24
 
 ### Added

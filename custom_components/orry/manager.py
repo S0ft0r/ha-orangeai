@@ -59,6 +59,12 @@ from .const import (
     DEFAULT_WATERING_MANUAL_DURATION, DEFAULT_WATERING_SAFETY_MARGIN,
     DEFAULT_LOW_BATTERY_THRESHOLD, DEFAULT_LOW_BATTERY_RECOVERY,
 )
+from .blind_motion import (
+    build_position_sequence,
+    clamp_cover_position,
+    diagnostic_position,
+    normalize_position_limits,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -460,31 +466,57 @@ class LoggiaManager:
         if not target_blinds:
             return
 
-        position = max(0, min(100, int(position)))
+        lower_limit, upper_limit = normalize_position_limits(
+            self.get_down_limit(), self.get_up_limit()
+        )
+        position = clamp_cover_position(position, lower_limit, upper_limit)
         self._last_target_position = position
-        repeat_count = int(self.get_number("repeat_for", DEFAULT_REPEAT))
-        repeat_delay = int(self.get_number("delay_for_repeat", DEFAULT_REPEAT_DELAY))
-        tolerance = repeat_count
+        repeat_count = max(1, int(self.get_number("repeat_for", DEFAULT_REPEAT)))
+        repeat_delay = max(0, int(self.get_number("delay_for_repeat", DEFAULT_REPEAT_DELAY)))
 
-        # Фильтруем шторы, которые уже находятся в целевой позиции (в пределах допуска)
-        blinds_to_move = []
+        # Даже команда в уже достигнутую позицию отменяет старую проверку,
+        # чтобы её отложенный микро-шаг не перезаписал новую цель.
+        self._command_seq += 1
+        my_seq = self._command_seq
+        if self._verify_task and not self._verify_task.done():
+            self._verify_task.cancel()
+
+        # Не пропускаем цель, если привод отличается от неё хотя бы на один процент.
+        blinds_to_move: list[str] = []
+        directions: dict[str, str] = {}
+        command_sequences: dict[str, list[int]] = {}
         for blind in target_blinds:
-            st = self.hass.states.get(blind)
-            cur = st.attributes.get(ATTR_CURRENT_POSITION) if st else None
+            state = self.hass.states.get(blind)
+            current = state.attributes.get(ATTR_CURRENT_POSITION) if state else None
             try:
-                if cur is None or abs(int(cur) - position) > tolerance:
-                    blinds_to_move.append(blind)
+                current_position = int(current) if current is not None else None
             except (TypeError, ValueError):
-                blinds_to_move.append(blind)
+                current_position = None
+
+            if current_position == position:
+                continue
+
+            if current_position is None:
+                direction = "none"
+            elif current_position < position:
+                direction = "up"
+            else:
+                direction = "down"
+
+            blinds_to_move.append(blind)
+            directions[blind] = direction
+            command_sequences[blind] = build_position_sequence(
+                position,
+                repeat_count,
+                direction,
+                lower_limit,
+                upper_limit,
+            )
 
         if not blinds_to_move:
             _LOGGER.debug(
                 "%s",
-                self.tr_log(
-                    "log_already_at_pos",
-                    position=position,
-                    tolerance=tolerance,
-                ),
+                self.tr_log("log_already_at_pos", position=position),
             )
             self._failed_blind_ids = []
             if self._error_sensor:
@@ -498,35 +530,47 @@ class LoggiaManager:
             self.tr_log("log_set_pos", position=position, blinds=blinds_to_move),
         )
 
-        self._command_seq += 1
-        my_seq = self._command_seq
         action_started_at = dt_util.now()
 
-        if self._verify_task and not self._verify_task.done():
-            self._verify_task.cancel()
-
-        for i in range(repeat_count):
+        for repeat_index in range(repeat_count):
             if self._command_seq != my_seq:
                 return
-            calc_pos = max(0, min(100, position - (repeat_count - 1 - i)))
-            await self.hass.services.async_call(
-                COVER_DOMAIN,
-                SERVICE_SET_COVER_POSITION,
-                {"entity_id": blinds_to_move, ATTR_POSITION: calc_pos},
-                blocking=True,
-            )
-            if i < repeat_count - 1:
+
+            # Привода могут двигаться в разных направлениях: группируем только
+            # одинаковые команды, сохраняя индивидуальную безопасную траекторию.
+            commands_by_position: dict[int, list[str]] = {}
+            for blind in blinds_to_move:
+                command_position = command_sequences[blind][repeat_index]
+                commands_by_position.setdefault(command_position, []).append(blind)
+
+            for command_position, command_blinds in commands_by_position.items():
+                if self._command_seq != my_seq:
+                    return
+                await self.hass.services.async_call(
+                    COVER_DOMAIN,
+                    SERVICE_SET_COVER_POSITION,
+                    {"entity_id": command_blinds, ATTR_POSITION: command_position},
+                    blocking=True,
+                )
+
+            if repeat_index < repeat_count - 1:
                 await asyncio.sleep(repeat_delay)
 
         if self._command_seq != my_seq:
             return
 
         movement_time = int(self.get_number("movement_time", DEFAULT_MOVEMENT_TIME))
-        direction = "up" if position >= 50 else "down"
         self._verify_task = self.entry.async_create_background_task(
             self.hass,
             self._async_verify_movement(
-                blinds_to_move, position, movement_time, direction, my_seq, action_started_at
+                blinds_to_move,
+                position,
+                movement_time,
+                directions=directions,
+                cmd_seq=my_seq,
+                action_started_at=action_started_at,
+                lower_limit=lower_limit,
+                upper_limit=upper_limit,
             ),
             "loggia_verify_movement",
         )
@@ -600,39 +644,50 @@ class LoggiaManager:
         blinds_list: list,
         target_position: int,
         delay_seconds: int,
-        direction: str = "down",
+        directions: dict[str, str] | None = None,
         cmd_seq: int | None = None,
         action_started_at: datetime | None = None,
+        lower_limit: int = 0,
+        upper_limit: int = 100,
     ):
         await asyncio.sleep(delay_seconds)
         if cmd_seq is not None and self._command_seq != cmd_seq:
             return
 
-        repeat_tol = int(self.get_number("repeat_for", DEFAULT_REPEAT))
+        target_position = clamp_cover_position(target_position, lower_limit, upper_limit)
+        repeat_count = max(1, int(self.get_number("repeat_for", DEFAULT_REPEAT)))
+        repeat_distance = repeat_count
+        repeat_delay = max(0, int(self.get_number("delay_for_repeat", DEFAULT_REPEAT_DELAY)))
+        directions = directions or {}
         excluded = self.excluded_blinds
         active_targets = [b for b in blinds_list if b not in excluded]
         if not active_targets:
             return
 
-        # Опрос реального физического положения каждого привода (как в оригинальном проекте dev.covers.yaml):
-        # микро-шаг +/- repeat_for и через 500 мс stop_cover заставляют привод прислать реальный current_position
-        nudge_pos = max(
-            0,
-            min(
-                100,
-                target_position + (-repeat_tol if direction == "up" else repeat_tol),
-            ),
-        )
+        # Диагностический микро-шаг направлен с правильной стороны индивидуально
+        # для каждого привода и всегда ограничен down_limit/up_limit.
+        nudge_positions = {
+            blind: diagnostic_position(
+                target_position,
+                repeat_distance,
+                directions.get(blind, "none"),
+                lower_limit,
+                upper_limit,
+            )
+            for blind in active_targets
+        }
         for blind in active_targets:
             if cmd_seq is not None and self._command_seq != cmd_seq:
                 return
             await self.hass.services.async_call(
                 COVER_DOMAIN,
                 SERVICE_SET_COVER_POSITION,
-                {"entity_id": blind, ATTR_POSITION: nudge_pos},
+                {"entity_id": blind, ATTR_POSITION: nudge_positions[blind]},
                 blocking=True,
             )
             await asyncio.sleep(0.5)
+            if cmd_seq is not None and self._command_seq != cmd_seq:
+                return
             await self.hass.services.async_call(
                 COVER_DOMAIN,
                 SERVICE_STOP_COVER,
@@ -644,30 +699,62 @@ class LoggiaManager:
         if cmd_seq is not None and self._command_seq != cmd_seq:
             return
 
-        failed = []
-        failed_ids = []
+        # Микро-шаг нужен только для обновления current_position: после него
+        # повторно отправляем точную цель, причём последняя команда всегда target_position.
+        for attempt in range(repeat_count):
+            if cmd_seq is not None and self._command_seq != cmd_seq:
+                return
+            await self.hass.services.async_call(
+                COVER_DOMAIN,
+                SERVICE_SET_COVER_POSITION,
+                {"entity_id": active_targets, ATTR_POSITION: target_position},
+                blocking=True,
+            )
+            if attempt < repeat_count - 1:
+                await asyncio.sleep(repeat_delay)
+
+        max_nudge_distance = max(
+            abs(target_position - nudge_positions[blind]) for blind in active_targets
+        )
+        settle_seconds = max(
+            2,
+            (max(0, int(delay_seconds)) * max_nudge_distance + 99) // 100 + 1,
+        )
+        await asyncio.sleep(settle_seconds)
+        if cmd_seq is not None and self._command_seq != cmd_seq:
+            return
+
+        failed: list[str] = []
+        failed_ids: list[str] = []
+        failed_by_direction: dict[str, list[str]] = {"up": [], "down": []}
         checked_count = 0
-        tolerance = max(5, repeat_tol)
         excluded = self.excluded_blinds
 
-        # Проверяем только те привода из целевого списка, которые не отключены
+        # Проверяем только те привода из целевого списка, которые не отключены;
+        # успешным считается только точное достижение целевой позиции.
         for blind in blinds_list:
             if blind in excluded:
                 continue
             checked_count += 1
             state = self.hass.states.get(blind)
             if not state:
-                failed.append(blind)
+                display_name = blind
+                current_value = None
+            else:
+                display_name = state.name or blind
+                current = state.attributes.get(ATTR_CURRENT_POSITION)
+                try:
+                    current_value = int(current) if current is not None else None
+                except (TypeError, ValueError):
+                    current_value = None
+
+            if current_value != target_position:
+                failed.append(display_name)
                 failed_ids.append(blind)
-                continue
-            cur = state.attributes.get(ATTR_CURRENT_POSITION)
-            try:
-                cur_val = int(cur) if cur is not None else None
-            except (TypeError, ValueError):
-                cur_val = None
-            if cur_val is None or abs(cur_val - target_position) > tolerance:
-                failed.append(state.name or blind)
-                failed_ids.append(blind)
+                movement = directions.get(blind)
+                if movement not in failed_by_direction:
+                    movement = "up" if target_position >= 50 else "down"
+                failed_by_direction[movement].append(display_name)
 
         self._failed_blind_ids = failed_ids
         if self._error_sensor:
@@ -686,16 +773,18 @@ class LoggiaManager:
                 total=checked_count,
             )
 
-        if failed:
-            await self._async_handle_error(failed, target_position, direction)
+        for movement, direction_failures in failed_by_direction.items():
+            if direction_failures:
+                await self._async_handle_error(
+                    direction_failures, target_position, movement
+                )
 
     @callback
     def recheck_failed_blinds(self) -> None:
-        """Убрать из списка ошибок привода, которые доехали до цели или были переведены в нужную сторону (открыты >=50% / закрыты <50%)."""
+        """Убирать ошибку только после точного достижения последней целевой позиции."""
         if not self._failed_blind_ids or self._last_target_position is None:
             return
 
-        tolerance = max(5, int(self.get_number("repeat_for", DEFAULT_REPEAT)))
         excluded = self.excluded_blinds
         still_failed_ids = []
         still_failed_names = []
@@ -715,14 +804,7 @@ class LoggiaManager:
             except (TypeError, ValueError):
                 cur_val = None
 
-            if cur_val is None:
-                still_failed_ids.append(blind)
-                still_failed_names.append(state.name or blind)
-                continue
-
-            reached_exact = abs(cur_val - target) <= tolerance
-            reached_side = (target >= 50 and cur_val >= 50) or (target < 50 and cur_val < 50)
-            if not (reached_exact or reached_side):
+            if cur_val != target:
                 still_failed_ids.append(blind)
                 still_failed_names.append(state.name or blind)
 

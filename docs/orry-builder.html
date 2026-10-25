@@ -59,7 +59,7 @@
       gap: 12px;
       padding: 14px 16px 11px;
     }
-    .header-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .header-left { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 auto; }
     .avatar {
       flex: 0 0 42px;
       width: 42px;
@@ -71,7 +71,7 @@
       border-radius: 50%;
     }
     .avatar svg { width: 23px; height: 23px; }
-    .titles { min-width: 0; }
+    .titles { min-width: 0; flex: 1 1 auto; }
     .title { font-size: 16px; line-height: 1.25; font-weight: 600; }
     .subtitle { min-width: 0; margin-top: 2px; overflow: hidden; color: var(--secondary); font-size: 12px; white-space: nowrap; }
     .subtitle-track { display: inline-flex; align-items: center; width: max-content; white-space: nowrap; }
@@ -86,25 +86,9 @@
       .subtitle.is-scrolling .subtitle-track { animation: none; will-change: auto; }
       .subtitle.is-scrolling .subtitle-clone { display: none; }
     }
-    .next-pill {
-      flex: 0 0 auto;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 9px;
-      border: 1px solid rgba(3, 169, 244, .22);
-      border-radius: 999px;
-      color: #147aa5;
-      background: var(--primary-soft);
-      font-size: 11px;
-      font-weight: 600;
-      white-space: nowrap;
-    }
-    .next-pill svg { width: 14px; height: 14px; }
-
     .kpi-grid {
       display: grid;
-      grid-template-columns: 1.15fr 1.15fr .9fr;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
       padding: 2px 16px 14px;
     }
@@ -126,19 +110,29 @@
     #blinds-kpi-main { display: none; }
     .blinds-summary-range { display: block; width: 100%; margin: 7px 2px; }
     .kpi-sub { overflow: hidden; color: var(--secondary); font-size: 10px; white-space: nowrap; text-overflow: ellipsis; }
-    .blinds-kpi-sub { display: block; overflow: visible; white-space: nowrap; text-overflow: clip; }
-    .blinds-kpi-subtext { display: none; }
-    .blinds-kpi-counts { display: inline-flex; align-items: center; white-space: nowrap; }
-    #lighting-kpi-main { visibility: hidden; }
-    .lighting-kpi-button { display: grid; width: 22px; height: 22px; flex: 0 0 auto; padding: 0; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--state-icon-color, var(--secondary)); cursor: pointer; }
+    .kpi-footer { min-width: 0; width: 100%; display: block; }
+    .device-count-pill { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 2px; min-height: 20px; padding: 3px 8px; border: 1px solid var(--line); border-radius: 999px; color: #147aa5; background: var(--primary-soft); font-size: 10px; line-height: 1; font-weight: 700; white-space: nowrap; }
+    .kpi-next-event { min-width: 0; width: 100%; display: block; overflow: hidden; color: var(--secondary); font-size: 10px; line-height: 1.25; text-align: left; white-space: nowrap; }
+    .kpi-next-event-track { width: 100%; display: block; overflow: hidden; white-space: nowrap; }
+    .kpi-next-event-copy { width: 100%; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .kpi-next-event-clone { display: none; }
+    .kpi-next-event.is-scrolling .kpi-next-event-track { width: max-content; display: inline-flex; align-items: center; gap: 28px; overflow: visible; animation: event-marquee var(--event-duration, 12s) linear infinite; will-change: transform; }
+    .kpi-next-event.is-scrolling .kpi-next-event-copy { width: auto; flex: 0 0 auto; display: inline-block; overflow: visible; text-overflow: clip; }
+    .kpi-next-event.is-scrolling .kpi-next-event-clone { display: inline-block; }
+    .kpi-next-event.is-scrolling:hover .kpi-next-event-track { animation-play-state: paused; }
+    @keyframes event-marquee { to { transform: translateX(var(--event-distance, -280px)); } }
+    @media (prefers-reduced-motion: reduce) {
+      .kpi-next-event.is-scrolling .kpi-next-event-track { width: 100%; display: block; animation: none; will-change: auto; }
+      .kpi-next-event.is-scrolling .kpi-next-event-copy { width: 100%; display: block; overflow: hidden; text-overflow: ellipsis; }
+      .kpi-next-event.is-scrolling .kpi-next-event-clone { display: none; }
+    }
+    .lighting-kpi-main, .watering-kpi-main { justify-content: flex-start; gap: 8px; }
+    .lighting-kpi-button, .watering-kpi-button { display: grid; width: 22px; height: 22px; flex: 0 0 auto; padding: 0; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--state-icon-color, var(--secondary)); cursor: pointer; }
     .lighting-kpi-button.is-on { color: var(--state-active-color, #fdd835); }
-    .lighting-kpi-button:hover { background: rgba(127, 127, 127, .12); }
-    .lighting-kpi-button:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
-    .lighting-kpi-button svg { width: 16px; height: 16px; }
-    .lighting-kpi-footer { display: flex; align-items: center; justify-content: space-between; gap: 5px; overflow: visible; }
-    .lighting-kpi-footer #lighting-kpi-sub { min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
-    .green-dot { width: 7px; height: 7px; display: inline-block; border-radius: 50%; background: #4caf50; }
-    .green-dot[hidden] { display: none; }
+    .watering-kpi-button.is-on { color: var(--primary); }
+    .lighting-kpi-button:hover, .watering-kpi-button:hover { background: rgba(127, 127, 127, .12); }
+    .lighting-kpi-button:focus-visible, .watering-kpi-button:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+    .lighting-kpi-button svg, .watering-kpi-button svg { width: 16px; height: 16px; }
 
     .tabs {
       display: grid;
@@ -406,14 +400,14 @@
     .drive-section-heading .sun-header { grid-column: 3; }
     .drive-section-heading .work-header { grid-column: 4; }
     .drive-header-icon { width: 100%; height: 22px; display: grid; place-items: center; color: var(--drive-muted); }
-    .drive-header-icon svg { width: 15px; height: 15px; }
+    .drive-header-icon svg { width: 21px; height: 21px; }
     .drive-rows { padding: 0 14px 3px; }
     .drive-row { position: relative; --drive-last-cell-width: 34px; align-items: center; padding: 9px 0 10px; border-bottom: 1px solid var(--drive-line); }
     .drive-row:last-child { border-bottom: 0; }
     .drive-row.is-disabled::before { content: ""; position: absolute; z-index: 0; inset: 0 var(--drive-last-cell-width) 0 0; background-image: repeating-linear-gradient(135deg, transparent 0 7px, var(--drive-hatch) 7px 9px); pointer-events: none; }
     .drive-row > * { position: relative; z-index: 1; }
     .drive-row.is-disabled > :not(:last-child) { opacity: .48; transition: opacity .18s ease; }
-    .drive-blind-icon { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; color: var(--drive-accent); background: var(--drive-accent-soft); }
+    .drive-blind-icon { width: 30px; height: 30px; display: grid; place-items: center; color: var(--drive-accent); }
     .drive-blind-icon svg { width: 20px; height: 20px; overflow: visible; }
     .drive-row-main { min-width: 0; }
     .drive-name-line { min-height: 17px; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
@@ -458,17 +452,17 @@
       .yaml-builder { padding: 12px; }
       .yaml-builder-header { align-items: flex-start; flex-direction: column; }
       .header { padding-left: 12px; padding-right: 12px; }
-      .kpi-grid { grid-template-columns: 1fr 1fr; padding-left: 12px; padding-right: 12px; }
-      .kpi:last-child { grid-column: span 2; }
-      .card.summary-mode .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .card.summary-mode .kpi:last-child { grid-column: auto; }
-      .card.summary-mode .kpi { padding: 7px 6px; }
-      .card.summary-mode .kpi-top { font-size: 10px; }
-      .card.summary-mode .kpi-main { font-size: 12px; }
-      .card.summary-mode .kpi-sub { font-size: 9px; }
+      .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); padding-left: 12px; padding-right: 12px; }
+      .kpi:last-child { grid-column: auto; }
+      .kpi { padding: 7px 6px; }
+      .kpi-top { gap: 3px; font-size: 9px; }
+      .kpi-top .device-count-pill { min-height: 18px; padding: 2px 4px; font-size: 8px; }
+      .kpi-main { font-size: 12px; }
+      .kpi-sub { font-size: 9px; }
+      .device-count-pill { padding: 2px 4px; font-size: 8px; }
+      .kpi-next-event { font-size: 9px; }
       .content { padding-left: 12px; padding-right: 12px; }
       .tab { gap: 4px; font-size: 11px; }
-      .next-pill { font-size: 10px; padding: 5px 7px; }
     }
   </style>
 </head>
@@ -522,6 +516,13 @@
             <span>Показывать процент</span>
           </label>
         </div>
+        <div>
+          <label class="drive-toggle-label" for="scroll-text">
+            <input id="scroll-text" type="checkbox">
+            <span>Прокручивать длинные сообщения</span>
+          </label>
+          <span class="field-help">Для длинных событий в третьей строке мини-карточек; при включении в YAML добавится <code>scroll_text: true</code>.</span>
+        </div>
       </div>
       <div class="preview-controls">
         <p class="preview-controls-title">Тема предпросмотра — не входит в YAML</p>
@@ -542,21 +543,26 @@
             <div class="title" id="card-title">Оранжерея</div>
             <div class="subtitle" id="card-subtitle">
               <span class="subtitle-track" id="card-subtitle-track">
-                <span class="subtitle-copy" id="card-subtitle-text">Полив томатов выполнен · 20:05</span>
+                <span class="subtitle-copy" id="card-subtitle-text">Подсветка выключена · 07:10</span>
                 <span class="subtitle-copy subtitle-clone" id="card-subtitle-clone" aria-hidden="true"></span>
               </span>
             </div>
           </div>
         </div>
-        <div class="next-pill">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-          <span id="next-action-text">Далее · 21:00</span>
-        </div>
       </header>
 
       <section class="kpi-grid" aria-label="Сводка модулей">
         <div class="kpi">
-          <div class="kpi-top"><span>Шторы</span><svg id="blinds-majority-icon" viewBox="0 0 24 24" fill="currentColor" role="img" aria-label="Определение положения большинства активных штор"></svg></div>
+          <div class="kpi-top">
+            <span>Шторы</span>
+            <span class="device-count-pill blinds-kpi-counts" id="blinds-kpi-counts" aria-label="5 устройств, 4 активных штор, 0 ошибок">
+              <span id="blinds-device-count" title="Всего устройств">5</span>
+              <span aria-hidden="true"> / </span>
+              <span id="blinds-active-count" title="Активных штор">4</span>
+              <span aria-hidden="true"> / </span>
+              <span id="blinds-error-count" title="Ошибок">0</span>
+            </span>
+          </div>
           <div class="kpi-main blinds-kpi-main">
             <span id="blinds-kpi-main">50%</span>
             <div class="range-line blinds-summary-range" id="blinds-summary-range">
@@ -565,31 +571,52 @@
               <input class="blinds-summary-range-input" id="blinds-summary-range-input" type="range" min="0" max="100" step="1" value="63" aria-label="Установить положение активных штор">
             </div>
           </div>
-          <div class="kpi-sub blinds-kpi-sub" id="blinds-kpi-sub">
-            <span class="blinds-kpi-subtext">Среднее положение</span>
-            <span class="blinds-kpi-counts" id="blinds-kpi-counts" aria-label="5 устройств, 4 активных штор, 0 ошибок">
-              <span id="blinds-device-count" title="Всего устройств">5</span>
-              <span aria-hidden="true"> / </span>
-              <span id="blinds-active-count" title="Активных штор">4</span>
-              <span aria-hidden="true"> / </span>
-              <span id="blinds-error-count" title="Ошибок">0</span>
+          <div class="kpi-footer">
+            <span class="kpi-next-event" id="blinds-next-event" title="Шторы оранжереи автоматически закроются сегодня в 20:00" aria-label="Шторы оранжереи автоматически закроются сегодня в 20:00">
+              <span class="kpi-next-event-track">
+                <span class="kpi-next-event-copy">Шторы оранжереи автоматически закроются сегодня в 20:00</span>
+                <span class="kpi-next-event-copy kpi-next-event-clone" aria-hidden="true"></span>
+              </span>
             </span>
           </div>
         </div>
         <div class="kpi">
-          <div class="kpi-top"><span>Подсветка</span><svg id="lighting-kpi-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.03,12.40C12.75,11.76 9.51,9.90 7.76,8.27C6.90,7.44 6.61,6.84 6.84,6.55C8.51,3.88 11.68,2.78 14.33,3.91C14.29,3.77 14.27,3.62 14.27,3.47C14.27,3.18 14.35,2.90 14.50,2.65C14.65,2.40 14.86,2.20 15.11,2.06C15.36,1.92 15.64,1.84 15.93,1.84C16.22,1.84 16.50,1.92 16.75,2.06C17.00,2.20 17.21,2.40 17.36,2.65C17.51,2.90 17.59,3.18 17.60,3.47C17.60,3.73 17.54,3.98 17.42,4.21C17.31,4.44 17.14,4.65 16.93,4.80C16.72,4.96 16.48,5.06 16.23,5.10L20.35,9.05Q20.90,9.58 20.90,10.13L20.90,19.65C22.69,19.80 23.19,20.20 23.19,20.80C23.19,21.65 21.99,22.00 20.09,22.00C18.19,22.00 16.99,21.65 16.99,20.80C16.99,20.20 17.49,19.80 19.28,19.65L19.28,10.25L17.72,8.75C17.77,9.36 17.73,9.97 17.60,10.57C17.48,11.17 17.27,11.75 16.99,12.29C16.85,12.65 16.19,12.72 15.03,12.40ZM6.88,22.00C5.97,22.00 5.08,21.76 4.30,21.31C3.52,20.86 2.86,20.20 2.41,19.42C1.96,18.64 1.72,17.75 1.72,16.84L1.72,12.54C2.36,12.54 2.98,12.64 3.58,12.88C4.05,13.07 4.47,13.37 4.82,13.74L6.88,11.68L8.94,13.74C9.29,13.37 9.71,13.07 10.18,12.88C10.78,12.64 11.40,12.54 12.04,12.54L12.04,16.84C12.04,17.75 11.80,18.64 11.35,19.42C10.90,20.20 10.24,20.86 9.46,21.31C8.68,21.76 7.79,22.00 6.88,22.00ZM10.32,14.78L8.97,16.20L6.88,14.11L4.79,16.20L3.44,14.78L3.44,16.84C3.44,17.29 3.53,17.74 3.70,18.16C3.87,18.57 4.13,18.95 4.45,19.27C4.77,19.59 5.15,19.85 5.56,20.02C5.98,20.19 6.43,20.28 6.88,20.28C7.33,20.28 7.78,20.19 8.20,20.02C8.61,19.85 8.99,19.59 9.31,19.27C9.63,18.95 9.89,18.57 10.06,18.16C10.23,17.74 10.32,17.29 10.32,16.84ZM10.18,6.58C8.60,6.05 8.29,6.48 9.53,7.57C10.79,8.67 13.13,9.99 14.72,10.51C16.29,11.02 16.51,10.54 15.24,9.45C13.99,8.38 11.74,7.10 10.18,6.58Z"/></svg></div>
-          <div class="kpi-main" id="lighting-kpi-main"><span class="green-dot" id="lighting-kpi-dot"></span><span id="lighting-kpi-state">Включена</span></div>
-          <div class="kpi-sub lighting-kpi-footer">
-            <span id="lighting-kpi-sub" aria-label="Всего устройств: 2, включено: 2" title="Всего устройств: 2, включено: 2">2 / 2</span>
+          <div class="kpi-top">
+            <span>Подсветка</span>
+            <span class="device-count-pill" id="lighting-kpi-sub" aria-label="Всего устройств: 2, включено: 2" title="Всего устройств: 2, включено: 2">2 / 2</span>
+          </div>
+          <div class="kpi-main lighting-kpi-main" id="lighting-kpi-main">
             <button class="lighting-kpi-button is-on" id="lighting-kpi-button" type="button" aria-label="Выключить подсветку" aria-pressed="true" title="Выключить подсветку">
               <svg data-icon="mdi:lightbulb-outline" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5"/></svg>
             </button>
           </div>
+          <div class="kpi-footer">
+            <span class="kpi-next-event" id="lighting-next-event" title="Подсветка растений автоматически выключится сегодня в 21:00" aria-label="Подсветка растений автоматически выключится сегодня в 21:00">
+              <span class="kpi-next-event-track">
+                <span class="kpi-next-event-copy">Подсветка растений автоматически выключится сегодня в 21:00</span>
+                <span class="kpi-next-event-copy kpi-next-event-clone" aria-hidden="true"></span>
+              </span>
+            </span>
+          </div>
         </div>
         <div class="kpi" id="watering-kpi">
-          <div class="kpi-top"><span>Полив</span><svg id="watering-kpi-icon" data-icon="orry:watering" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9.11,6.63C9.88,7.09 10.26,7.93 10.15,8.75L14.24,11.20L13.60,8.64C13.49,8.18 13.77,7.71 14.23,7.60L14.12,7.18C13.95,6.49 13.96,5.76 14.16,5.07C14.36,4.38 14.73,3.75 15.25,3.26C15.76,2.76 16.40,2.40 17.10,2.23C17.79,2.06 18.52,2.07 19.21,2.27C19.90,2.47 20.53,2.84 21.02,3.36C21.52,3.87 21.88,4.51 22.05,5.21C22.41,6.63 22.07,8.06 21.26,9.16L22.57,14.38C22.68,14.84 22.40,15.31 21.94,15.43L16.51,16.78C16.06,16.89 15.59,16.61 15.47,16.15L14.83,13.56L9.27,10.22C8.59,10.70 7.68,10.77 6.92,10.31ZM6.88,22.00C5.97,22.00 5.08,21.76 4.30,21.31C3.52,20.86 2.86,20.20 2.41,19.42C1.96,18.64 1.72,17.75 1.72,16.84L1.72,12.54C2.36,12.54 2.98,12.64 3.58,12.88C4.05,13.07 4.47,13.37 4.82,13.74L6.88,11.68L8.94,13.74C9.29,13.37 9.71,13.07 10.18,12.88C10.78,12.64 11.40,12.54 12.04,12.54L12.04,16.84C12.04,17.75 11.80,18.64 11.35,19.42C10.90,20.20 10.24,20.86 9.46,21.31C8.68,21.76 7.79,22.00 6.88,22.00ZM10.32,14.78L8.97,16.20L6.88,14.11L4.79,16.20L3.44,14.78L3.44,16.84C3.44,17.29 3.53,17.74 3.70,18.16C3.87,18.57 4.13,18.95 4.45,19.27C4.77,19.59 5.15,19.85 5.56,20.02C5.98,20.19 6.43,20.28 6.88,20.28C7.33,20.28 7.78,20.19 8.20,20.02C8.61,19.85 8.99,19.59 9.31,19.27C9.63,18.95 9.89,18.57 10.06,18.16C10.23,17.74 10.32,17.29 10.32,16.84ZM16.93,14.90L20.69,13.97L19.23,8.13L15.48,9.06ZM20.44,6.05L20.34,5.63C20.20,5.28 19.98,4.97 19.69,4.72C19.40,4.47 19.06,4.30 18.69,4.21C18.32,4.12 17.94,4.12 17.57,4.21C17.20,4.31 16.86,4.48 16.58,4.74C16.29,4.99 16.07,5.30 15.94,5.66C15.80,6.01 15.75,6.39 15.79,6.77L15.90,7.18Z"/></svg></div>
-          <div class="kpi-main" id="watering-kpi-main">По расписанию</div>
-          <div class="kpi-sub" id="watering-kpi-sub">08:00 · 20:00</div>
+          <div class="kpi-top">
+            <span>Полив</span>
+            <span class="device-count-pill" id="watering-kpi-counts" aria-label="Настроено направлений: 3, активно: 2" title="Настроено направлений: 3, активно: 2">3 / 2</span>
+          </div>
+          <div class="kpi-main watering-kpi-main">
+            <button class="watering-kpi-button is-on" id="watering-kpi-button" type="button" aria-label="Отключить автополив" aria-pressed="true" title="Отключить автополив">
+              <svg id="watering-kpi-icon" data-icon="mdi:watering-can" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.5 7.47c-.74.73-.93 1.78-.58 2.68L15 13.07V11c0-.55-.45-1-1-1h-1.03c.03-.17.03-.33.03-.5C13 6.46 10.54 4 7.5 4A5.497 5.497 0 0 0 4 13.74V20c0 .55.45 1 1 1h9c.55 0 1-.45 1-1v-4.11l4.33-4.33c.9.35 1.95.17 2.67-.56zM4.05 10C4.03 9.83 4 9.67 4 9.5C4 7.57 5.57 6 7.5 6S11 7.57 11 9.5c0 .17-.03.33-.05.5z"/></svg>
+            </button>
+          </div>
+          <div class="kpi-footer">
+            <span class="kpi-next-event" id="watering-next-event" title="Следующий полив по расписанию сегодня в 20:00" aria-label="Следующий полив по расписанию сегодня в 20:00">
+              <span class="kpi-next-event-track">
+                <span class="kpi-next-event-copy">Следующий полив по расписанию сегодня в 20:00</span>
+                <span class="kpi-next-event-copy kpi-next-event-clone" aria-hidden="true"></span>
+              </span>
+            </span>
+          </div>
         </div>
       </section>
 
@@ -604,10 +631,10 @@
           <section class="drive-demo" aria-label="Утверждённый макет индикаторов приводов">
             <div class="drive-section-heading" aria-label="Значки столбцов">
               <span class="drive-header-icon sun-header" title="Защита от солнца" aria-label="Защита от солнца">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/></svg>
+                <svg data-icon="orry:blind-sun" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.00,3.00L20.00,3.00L20.00,8.51L19.59,8.38L18.88,8.23L18.15,8.13L18.00,8.13L18.00,5.00L16.70,5.00L16.70,8.13L16.70,8.13L15.98,8.23L15.26,8.38L14.57,8.60L13.90,8.88L13.25,9.22L12.64,9.61L12.06,10.05L11.52,10.55L11.03,11.08L10.59,11.66L10.19,12.27L9.86,12.92L9.58,13.59L9.36,14.29L9.20,15.00L9.11,15.72L9.08,16.45L9.11,17.18L9.19,17.80L7.30,17.80L7.30,5.00L6.00,5.00L6.00,19.00L9.48,19.00L9.58,19.31L9.86,19.98L10.19,20.62L10.43,21.00L2.00,21.00L2.00,19.00L4.00,19.00ZM17.43,12.96C18.03,12.96 18.64,13.13 19.18,13.43C19.69,13.74 20.14,14.18 20.44,14.70C20.75,15.23 20.91,15.84 20.91,16.45C20.91,17.06 20.75,17.67 20.44,18.20C20.14,18.72 19.69,19.16 19.18,19.47C18.64,19.77 18.03,19.94 17.43,19.94C16.82,19.94 16.21,19.77 15.68,19.47C15.16,19.16 14.71,18.72 14.41,18.20C14.11,17.67 13.94,17.06 13.94,16.45C13.94,15.84 14.11,15.23 14.41,14.70C14.71,14.18 15.16,13.74 15.68,13.43C16.21,13.13 16.82,12.96 17.43,12.96ZM17.43,14.56C17.10,14.56 16.77,14.65 16.49,14.81C16.20,14.98 15.96,15.22 15.79,15.51C15.63,15.79 15.54,16.12 15.54,16.45C15.54,16.78 15.63,17.11 15.79,17.39C15.96,17.68 16.20,17.92 16.49,18.09C16.77,18.25 17.10,18.34 17.43,18.34C17.76,18.34 18.09,18.25 18.36,18.09C18.66,17.92 18.90,17.68 19.06,17.39C19.23,17.11 19.31,16.78 19.31,16.45C19.31,16.12 19.23,15.79 19.06,15.51C18.90,15.22 18.66,14.98 18.36,14.81C18.09,14.65 17.76,14.56 17.43,14.56ZM17.43,9.20L19.24,11.85C18.68,11.63 18.06,11.51 17.43,11.51C16.79,11.51 16.17,11.63 15.61,11.85ZM17.43,23.70L15.61,21.05C16.17,21.27 16.79,21.41 17.43,21.41C18.06,21.41 18.68,21.27 19.24,21.05ZM23.70,20.08L20.57,20.35C21.05,19.94 21.47,19.44 21.75,18.88C22.09,18.34 22.31,17.78 22.38,17.15ZM11.15,20.08L12.48,17.15C12.55,17.78 12.75,18.34 13.10,18.88C13.38,19.44 13.80,19.94 14.28,20.35ZM23.70,12.83L22.38,15.75C22.31,15.12 22.09,14.56 21.75,14.02C21.47,13.46 21.05,12.96 20.57,12.55ZM11.15,12.83L14.28,12.55C13.80,12.96 13.38,13.46 13.10,14.02C12.75,14.56 12.55,15.12 12.48,15.75Z"/></svg>
               </span>
               <span class="drive-header-icon work-header" title="Включение шторы в работу" aria-label="Включение шторы в работу">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v10"/><path d="M6.2 5.8a8 8 0 1 0 11.6 0"/></svg>
+                <svg data-icon="orry:blind-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.00,3.00L20.00,3.00L20.00,10.11L19.40,9.86L18.77,9.66L18.12,9.52L18.00,9.50L18.00,5.00L16.70,5.00L16.70,9.40L16.14,9.43L15.48,9.52L14.83,9.66L14.20,9.86L13.59,10.11L13.00,10.42L12.44,10.77L11.91,11.18L11.43,11.63L10.98,12.11L10.57,12.64L10.22,13.20L9.91,13.79L9.66,14.40L9.46,15.03L9.36,15.50L7.30,15.50L7.30,5.00L6.00,5.00L6.00,19.00L9.47,19.00L9.66,19.60L9.91,20.21L10.22,20.80L10.35,21.00L2.00,21.00L2.00,19.00L4.00,19.00ZM13.26,12.24L15.71,12.24L15.71,21.76L13.26,21.76L13.26,12.24M17.89,12.24L20.34,12.24L20.34,21.76L17.89,21.76L17.89,12.24Z"/></svg>
               </span>
             </div>
             <div class="drive-rows" id="drive-list"></div>
@@ -731,8 +758,9 @@
     const autoStatus = document.getElementById('auto-status');
     const skipStatus = document.getElementById('skip-status');
     const wateringStatus = document.getElementById('watering-status');
-    const kpiMain = document.getElementById('watering-kpi-main');
-    const kpiSub = document.getElementById('watering-kpi-sub');
+    const wateringKpiButton = document.getElementById('watering-kpi-button');
+    const wateringNextEvent = document.getElementById('watering-next-event');
+    const wateringNextEventText = wateringNextEvent.querySelector('.kpi-next-event-copy:not(.kpi-next-event-clone)');
     const manualZone = document.getElementById('manual-zone');
     const manualExecute = document.getElementById('manual-execute');
     const manualHint = document.getElementById('manual-hint');
@@ -740,6 +768,13 @@
 
     const playIcon = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><span>Запустить</span>';
     const stopIcon = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg><span>Остановить</span>';
+
+    function updateWateringMiniEvent(text) {
+      wateringNextEventText.textContent = text;
+      wateringNextEvent.setAttribute('title', text);
+      wateringNextEvent.setAttribute('aria-label', text);
+      wateringNextEvent.dispatchEvent(new Event('watering-event-updated'));
+    }
 
     function updateWateringDemo() {
       const autoOn = autoToggle.classList.contains('is-on');
@@ -754,26 +789,29 @@
       manualExecute.innerHTML = manualRunning ? stopIcon : playIcon;
       manualExecute.setAttribute('aria-label', manualRunning ? 'Остановить ручной полив' : 'Запустить ручной полив');
 
+      wateringKpiButton.classList.toggle('is-on', autoOn);
+      wateringKpiButton.classList.toggle('is-off', !autoOn);
+      const toggleLabel = autoOn ? 'Отключить автополив' : 'Включить автополив';
+      wateringKpiButton.setAttribute('aria-pressed', String(autoOn));
+      wateringKpiButton.setAttribute('aria-label', toggleLabel);
+      wateringKpiButton.setAttribute('title', toggleLabel);
+
       if (manualRunning) {
         wateringStatus.textContent = `Ручной полив: ${selectedName}`;
-        kpiMain.textContent = 'Полив идёт';
-        kpiSub.textContent = selectedName;
+        updateWateringMiniEvent(`Выполняется ручной полив направления «${selectedName}»`);
         manualHint.textContent = `Идёт ручной полив направления «${selectedName}». Нажмите «Остановить».`;
         return;
       }
 
       if (!autoOn) {
         wateringStatus.textContent = 'Автополив отключён';
-        kpiMain.textContent = 'Отключён';
-        kpiSub.textContent = 'Расписание приостановлено';
+        updateWateringMiniEvent('Следующий полив не запланирован — автополив отключён');
       } else if (skipNext) {
         wateringStatus.textContent = 'Следующий цикл будет пропущен';
-        kpiMain.textContent = 'Пропуск цикла';
-        kpiSub.textContent = 'Ближайший полив отменён';
+        updateWateringMiniEvent('Ближайший цикл полива сегодня в 20:00 будет пропущен');
       } else {
         wateringStatus.textContent = 'Следующий цикл — 20:00';
-        kpiMain.textContent = 'По расписанию';
-        kpiSub.textContent = '08:00 · 20:00';
+        updateWateringMiniEvent('Следующий полив по расписанию сегодня в 20:00');
       }
 
       manualHint.textContent = manualZone.value === 'stop'
@@ -790,6 +828,7 @@
     autoToggle.addEventListener('click', () => setToggle(autoToggle, !autoToggle.classList.contains('is-on')));
     skipToggle.addEventListener('click', () => setToggle(skipToggle, !skipToggle.classList.contains('is-on')));
     manualZone.addEventListener('change', updateWateringDemo);
+    wateringKpiButton.addEventListener('click', () => setToggle(autoToggle, !autoToggle.classList.contains('is-on')));
     manualExecute.addEventListener('click', () => {
       if (manualRunning) {
         manualRunning = false;
@@ -814,10 +853,10 @@
       const template = document.getElementById("drive-row-template");
       const cardModeInput = document.getElementById("card-mode");
       const cardPreview = document.getElementById("card-preview");
+      const scrollTextInput = document.getElementById("scroll-text");
       const cardSubtitle = document.getElementById("card-subtitle");
       const cardSubtitleText = document.getElementById("card-subtitle-text");
       const cardSubtitleClone = document.getElementById("card-subtitle-clone");
-      const nextActionText = document.getElementById("next-action-text");
       const blindsKpiMain = document.getElementById("blinds-kpi-main");
       const blindsKpiCounts = document.getElementById("blinds-kpi-counts");
       const blindsDeviceCount = document.getElementById("blinds-device-count");
@@ -826,7 +865,6 @@
       const blindsSummaryRangeInput = document.getElementById("blinds-summary-range-input");
       const blindsSummaryRangeFill = document.getElementById("blinds-summary-range-fill");
       const blindsSummaryRangeThumb = document.getElementById("blinds-summary-range-thumb");
-      const blindsMajorityIcon = document.getElementById("blinds-majority-icon");
       const lightingKpiSub = document.getElementById("lighting-kpi-sub");
       const indicatorMode = document.getElementById("drive-indicator-mode");
       const showPositionPercent = document.getElementById("drive-show-position-percent");
@@ -842,9 +880,11 @@
       const yamlStatus = document.getElementById("yaml-status");
       const copyYamlButton = document.getElementById("yaml-copy");
       const lightingPanelSummary = document.getElementById("lighting-panel-summary");
-      const lightingKpiState = document.getElementById("lighting-kpi-state");
-      const lightingKpiDot = document.getElementById("lighting-kpi-dot");
       const lightingKpiButton = document.getElementById("lighting-kpi-button");
+      const blindsNextEvent = document.getElementById("blinds-next-event");
+      const lightingNextEvent = document.getElementById("lighting-next-event");
+      const wateringNextEvent = document.getElementById("watering-next-event");
+      const lightingNextEventText = lightingNextEvent.querySelector(".kpi-next-event-copy:not(.kpi-next-event-clone)");
       let lightingOn = true;
 
       function setTheme(isDark) {
@@ -932,6 +972,30 @@
         cardSubtitle.style.setProperty("--subtitle-duration", `${Math.max(8, distance / 30)}s`);
       }
 
+      function updateEventOverflow() {
+        for (const event of [blindsNextEvent, lightingNextEvent, wateringNextEvent]) {
+          const textElement = event.querySelector(".kpi-next-event-copy:not(.kpi-next-event-clone)");
+          const clone = event.querySelector(".kpi-next-event-clone");
+          const text = textElement.textContent;
+          const textWidth = textElement.scrollWidth;
+          const shouldScroll = scrollTextInput.checked && textWidth > event.clientWidth + 1;
+          event.setAttribute("title", text);
+          event.setAttribute("aria-label", text);
+          event.classList.toggle("is-scrolling", shouldScroll);
+          if (!shouldScroll) {
+            clone.textContent = "";
+            event.style.removeProperty("--event-distance");
+            event.style.removeProperty("--event-duration");
+            continue;
+          }
+          const gap = 28;
+          const distance = textWidth + gap;
+          clone.textContent = text;
+          event.style.setProperty("--event-distance", `${-distance}px`);
+          event.style.setProperty("--event-duration", `${Math.max(8, distance / 30)}s`);
+        }
+      }
+
       function getActiveBlindRows() {
         return [...driveList.querySelectorAll(".drive-row")].filter((row) =>
           row.querySelector('[data-kind="work"]').checked
@@ -965,46 +1029,12 @@
           "aria-label",
           isSummary ? "Превью краткой карточки Orry" : "Превью полной карточки Orry"
         );
-        cardSubtitleText.textContent = "Полив томатов выполнен · 20:05";
+        cardSubtitleText.textContent = "Подсветка выключена · 07:10";
         updateSubtitleOverflow();
-        nextActionText.textContent = isSummary
-          ? "Далее: Подсветка выключится в 21:00"
-          : "Далее · 21:00";
+        updateEventOverflow();
         syncBlindPositionIndicators();
         updateBlindsKpiCounts();
         updateLightingKpiCount();
-      }
-
-      function updateBlindsMajorityIcon() {
-        const activeRows = getActiveBlindRows();
-        const positions = activeRows
-          .map((row) => Number(row.dataset.position))
-          .filter(Number.isFinite);
-        const openPositions = positions.filter((position) => position >= 50);
-        const closedPositions = positions.filter((position) => position < 50);
-        const openHasMajority = openPositions.length > closedPositions.length;
-        const closedHasMajority = closedPositions.length > openPositions.length;
-        const majorityPositions = openHasMajority
-          ? openPositions
-          : closedHasMajority
-            ? closedPositions
-            : positions;
-        const representativePosition = majorityPositions.length
-          ? majorityPositions.reduce((sum, position) => sum + position, 0) / majorityPositions.length
-          : 50;
-        const iconPosition = Math.max(0, Math.min(100, Math.round(representativePosition / 25) * 25));
-        const state = positions.length === 0
-          ? "Нет активных штор"
-          : openHasMajority
-            ? `Большинство открыто; положение большинства около ${iconPosition}% (${openPositions.length} из ${positions.length})`
-            : closedHasMajority
-              ? `Большинство закрыто; положение большинства около ${iconPosition}% (${closedPositions.length} из ${positions.length})`
-              : `Поровну открытых и закрытых; среднее положение ${iconPosition}%`;
-
-        blindsMajorityIcon.dataset.state = String(iconPosition);
-        blindsMajorityIcon.setAttribute("aria-label", state);
-        blindsMajorityIcon.setAttribute("title", `${state}; иконка округлена до ближайших 25%`);
-        blindsMajorityIcon.innerHTML = `<path d="${blindStateIconPaths[iconPosition]}"/>`;
       }
 
       function updateBlindsKpiCounts() {
@@ -1028,6 +1058,7 @@
         const validSwitchIcon = !switchIcon || /^[a-z0-9_-]+:[a-z0-9_/-]+$/i.test(switchIcon);
         const driveIndicator = indicatorMode.value;
         const showPercent = showPositionPercent.checked;
+        const scrollText = scrollTextInput.checked;
         titlePreview.textContent = title || "Оранжерея";
         updateModePreview();
         const lines = [
@@ -1043,6 +1074,7 @@
           );
         }
         if (title) lines.push(`title: ${yamlQuote(title)}`);
+        if (scrollText) lines.push("scroll_text: true");
         if (switchIcon && validSwitchIcon) lines.push(`switch_icon: ${switchIcon}`);
         yamlOutput.value = lines.join("\n");
 
@@ -1072,8 +1104,6 @@
         entityIcon.classList.toggle("is-off", !isOn);
         const stateLabel = isOn ? "Включена" : "Выключена";
         lightingPanelSummary.textContent = `${stateLabel} · 1 устройство`;
-        lightingKpiState.textContent = stateLabel;
-        lightingKpiDot.hidden = !isOn;
         updateLightingKpiCount();
         lightingKpiButton.classList.toggle("is-on", isOn);
         lightingKpiButton.classList.toggle("is-off", !isOn);
@@ -1081,9 +1111,15 @@
         lightingKpiButton.setAttribute("aria-pressed", String(isOn));
         lightingKpiButton.setAttribute("aria-label", toggleLabel);
         lightingKpiButton.setAttribute("title", toggleLabel);
+        const nextEventText = isOn
+          ? "Подсветка растений автоматически выключится сегодня в 21:00"
+          : "Подсветка растений автоматически включится завтра в 08:00";
+        lightingNextEventText.textContent = nextEventText;
+        updateEventOverflow();
       }
 
       cardModeInput.addEventListener("change", updateYamlBuilder);
+      scrollTextInput.addEventListener("change", updateYamlBuilder);
       switchIconInput.addEventListener("input", () => {
         updateSwitchIcons();
         updateYamlBuilder();
@@ -1107,11 +1143,21 @@
       });
       lightingPillToggle.addEventListener("click", () => setLightingState(!lightingOn));
       lightingKpiButton.addEventListener("click", () => setLightingState(!lightingOn));
+      wateringNextEvent.addEventListener("watering-event-updated", updateEventOverflow);
       if (typeof ResizeObserver !== "undefined") {
-        const subtitleObserver = new ResizeObserver(updateSubtitleOverflow);
-        subtitleObserver.observe(cardSubtitle);
+        const textOverflowObserver = new ResizeObserver(() => {
+          updateSubtitleOverflow();
+          updateEventOverflow();
+        });
+        textOverflowObserver.observe(cardSubtitle);
+        textOverflowObserver.observe(blindsNextEvent);
+        textOverflowObserver.observe(lightingNextEvent);
+        textOverflowObserver.observe(wateringNextEvent);
       } else {
-        window.addEventListener("resize", updateSubtitleOverflow);
+        window.addEventListener("resize", () => {
+          updateSubtitleOverflow();
+          updateEventOverflow();
+        });
       }
       updateSwitchIcons();
       updateYamlBuilder();
@@ -1137,7 +1183,6 @@
           row.classList.toggle("is-disabled", !work.checked);
           renderDriveRows();
           syncBlindPositionIndicators();
-          updateBlindsMajorityIcon();
           updateBlindsKpiCounts();
         });
         driveList.appendChild(fragment);
@@ -1193,7 +1238,6 @@
       });
       renderDriveRows();
       syncBlindPositionIndicators();
-      updateBlindsMajorityIcon();
       updateBlindsKpiCounts();
       blindsSummaryRangeInput.addEventListener("input", () => {
         const position = Math.max(0, Math.min(100, Math.round(Number(blindsSummaryRangeInput.value) || 0)));
@@ -1204,10 +1248,10 @@
         }
         renderDriveRows();
         syncBlindPositionIndicators(position);
-        updateBlindsMajorityIcon();
         updateBlindsKpiCounts();
       });
     })();
   </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>

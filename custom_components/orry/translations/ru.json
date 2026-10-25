@@ -1018,7 +1018,7 @@
     "logbook_name": "Шторы",
     "notify_title": "Шторы: Ошибка штор",
     "log_setup_entry": "Загрузка интеграции Orry: {title}",
-    "log_already_at_pos": "Оранжерея: Все шторы уже в позиции {position}% (±{tolerance}%)",
+    "log_already_at_pos": "Оранжерея: Все шторы уже в позиции {position}%",
     "log_set_pos": "Оранжерея: Установка позиции {position}% → {blinds}",
     "log_stop": "Оранжерея: Стоп → {blinds}",
     "log_out_of_limits": "Оранжерея: Действие {target}% вне установленных лимитов ({low}%..{high}%), движение отменено.",

@@ -1018,7 +1018,7 @@
     "logbook_name": "Blinds",
     "notify_title": "Blinds: Blind error",
     "log_setup_entry": "Setting up Orry integration: {title}",
-    "log_already_at_pos": "Orangery: All blinds are already at position {position}% (±{tolerance}%)",
+    "log_already_at_pos": "Orangery: All blinds are already at position {position}%",
     "log_set_pos": "Orangery: Setting position {position}% → {blinds}",
     "log_stop": "Orangery: Stop → {blinds}",
     "log_out_of_limits": "Orangery: Action {target}% is outside configured limits ({low}%..{high}%), movement cancelled.",
