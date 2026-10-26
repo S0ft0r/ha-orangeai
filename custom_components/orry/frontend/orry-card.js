@@ -4,7 +4,7 @@
  */
 
 const CARD_TYPE = "orry-card";
-const CARD_VERSION = "0.1.26";
+const CARD_VERSION = "0.1.26.1";
 const DOMAIN = "orry";
 
 const ENTITY_KEYS = [
@@ -303,6 +303,67 @@ const TEXT = {
     active: "Active",
     diagnostics: "Diagnostics",
     configureHint: "Open the card menu and select the “Next” sensor from the desired Orry integration.",
+  },
+};
+
+const EDITOR_TEXT = {
+  ru: {
+    options: {
+      mode: { full: "Полная", summary: "Краткая" },
+      defaultTab: { blinds: "Шторы", phytolamp: "Подсветка", watering: "Полив" },
+      driveIndicator: {
+        position: "Положение шторы",
+        battery: "Заряд батареи",
+        none: "Без индикатора",
+      },
+    },
+    labels: {
+      mode: "Режим карточки",
+      entity: "Основной сенсор «Далее»",
+      default_tab: "Вкладка по умолчанию",
+      title: "Свой заголовок (необязательно)",
+      switch_icon: "Иконка вместо переключателя (необязательно)",
+      drive_indicator: "Индикатор приводов штор",
+      show_position_percent: "Показывать процент положения штор",
+      scroll_text: "Прокручивать длинные события",
+    },
+    helpers: {
+      mode: "Полная — вкладки и подробное управление; краткая — те же сводные плитки без вкладок.",
+      entity: "Выберите сенсор «Далее» с основного устройства. Карточка найдёт остальные сущности этой конфигурации Orry автоматически.",
+      drive_indicator: "Выберите одну полосу: положение шторы, заряд батареи или отсутствие полосы.",
+      switch_icon: "Если не задана, отображается стандартный переключатель; если задана — указанная иконка вместо него.",
+      show_position_percent: "Показ процента положения не зависит от выбранной полосы и всегда относится к положению шторы.",
+      scroll_text: "Если включено, длинные события в мини-карточках будут прокручиваться вместо обрезания.",
+    },
+  },
+  en: {
+    options: {
+      mode: { full: "Full", summary: "Summary" },
+      defaultTab: { blinds: "Blinds", phytolamp: "Lighting", watering: "Watering" },
+      driveIndicator: {
+        position: "Blind position",
+        battery: "Battery level",
+        none: "None",
+      },
+    },
+    labels: {
+      mode: "Card mode",
+      entity: "Main “Next” sensor",
+      default_tab: "Default tab",
+      title: "Custom title (optional)",
+      switch_icon: "Icon instead of the switch (optional)",
+      drive_indicator: "Blind drive indicator",
+      show_position_percent: "Show blind position percentage",
+      scroll_text: "Scroll long events",
+    },
+    helpers: {
+      mode: "Full mode includes tabs and detailed controls; summary mode shows the same overview tiles without tabs.",
+      entity: "Choose the “Next” sensor from the main device. The card will automatically find the other entities in this Orry configuration.",
+      drive_indicator: "Choose one indicator bar: blind position, battery level, or no bar.",
+      switch_icon: "If no icon is set, the standard switch is shown. If set, the selected icon replaces it.",
+      show_position_percent: "The position percentage is independent of the selected bar and always refers to the blind position.",
+      scroll_text: "When enabled, long events in mini cards scroll instead of being truncated.",
+    },
   },
 };
 
@@ -1006,6 +1067,137 @@ const CARD_STYLES = `
   }
 `;
 
+function createEditorSchema(text) {
+  return [
+    {
+      name: "mode",
+      default: "full",
+      selector: {
+        select: {
+          mode: "dropdown",
+          options: [
+            { value: "full", label: text.options.mode.full },
+            { value: "summary", label: text.options.mode.summary },
+          ],
+        },
+      },
+    },
+    {
+      name: "entity",
+      required: true,
+      selector: {
+        entity: {
+          domain: "sensor",
+          integration: DOMAIN,
+        },
+      },
+    },
+    {
+      name: "default_tab",
+      default: "blinds",
+      selector: {
+        select: {
+          mode: "dropdown",
+          options: [
+            { value: "blinds", label: text.options.defaultTab.blinds },
+            { value: "phytolamp", label: text.options.defaultTab.phytolamp },
+            { value: "watering", label: text.options.defaultTab.watering },
+          ],
+        },
+      },
+    },
+    { name: "title", selector: { text: {} } },
+    { name: "switch_icon", selector: { icon: {} } },
+    {
+      name: "drive_indicator",
+      default: "position",
+      selector: {
+        select: {
+          mode: "dropdown",
+          options: [
+            { value: "position", label: text.options.driveIndicator.position },
+            { value: "battery", label: text.options.driveIndicator.battery },
+            { value: "none", label: text.options.driveIndicator.none },
+          ],
+        },
+      },
+    },
+    {
+      name: "show_position_percent",
+      default: true,
+      selector: { boolean: {} },
+    },
+    {
+      name: "scroll_text",
+      default: false,
+      selector: { boolean: {} },
+    },
+  ];
+}
+
+function createOrryCardEditor() {
+  const editor = document.createElement("div");
+  let hass = null;
+  let config = {};
+  let form = null;
+  let activeLanguage = null;
+
+  const render = () => {
+    if (!hass) return;
+    const language = languageFor(hass);
+    const text = EDITOR_TEXT[language] || EDITOR_TEXT.en;
+    if (form && activeLanguage === language) {
+      form.hass = hass;
+      return;
+    }
+
+    activeLanguage = language;
+    form = document.createElement("ha-form");
+    form.hass = hass;
+    form.data = config;
+    form.schema = createEditorSchema(text);
+    form.computeLabel = (schema) => text.labels[schema.name] || schema.name;
+    form.computeHelper = (schema) => text.helpers[schema.name];
+    form.addEventListener("value-changed", (event) => {
+      event.stopPropagation();
+      const values = event.detail?.value;
+      if (!values || typeof values !== "object") return;
+      config = { ...config, ...values };
+      editor.dispatchEvent(
+        new CustomEvent("config-changed", {
+          detail: { config },
+          bubbles: true,
+          composed: true,
+        })
+      );
+    });
+    editor.replaceChildren(form);
+  };
+
+  editor.setConfig = (nextConfig) => {
+    config = nextConfig && typeof nextConfig === "object" ? { ...nextConfig } : {};
+    if (form) {
+      form.data = config;
+    } else {
+      render();
+    }
+  };
+
+  Object.defineProperty(editor, "hass", {
+    get: () => hass,
+    set: (nextHass) => {
+      hass = nextHass;
+      if (form && languageFor(hass) === activeLanguage) {
+        form.hass = hass;
+      } else {
+        render();
+      }
+    },
+  });
+
+  return editor;
+}
+
 class OrryCard extends HTMLElement {
   constructor() {
     super();
@@ -1035,117 +1227,8 @@ class OrryCard extends HTMLElement {
     };
   }
 
-  static getConfigForm() {
-    return {
-      schema: [
-        {
-          name: "mode",
-          default: "full",
-          selector: {
-            select: {
-              mode: "dropdown",
-              options: [
-                { value: "full", label: "Полная" },
-                { value: "summary", label: "Краткая" },
-              ],
-            },
-          },
-        },
-        {
-          name: "entity",
-          required: true,
-          selector: {
-            entity: {
-              domain: "sensor",
-              integration: DOMAIN,
-            },
-          },
-        },
-        {
-          name: "default_tab",
-          default: "blinds",
-          selector: {
-            select: {
-              mode: "dropdown",
-              options: [
-                { value: "blinds", label: "Шторы" },
-                { value: "phytolamp", label: "Подсветка" },
-                { value: "watering", label: "Полив" },
-              ],
-            },
-          },
-        },
-        { name: "title", selector: { text: {} } },
-        { name: "switch_icon", selector: { icon: {} } },
-        {
-          name: "drive_indicator",
-          default: "position",
-          selector: {
-            select: {
-              mode: "dropdown",
-              options: [
-                { value: "position", label: "Положение шторы" },
-                { value: "battery", label: "Заряд батареи" },
-                { value: "none", label: "Без индикатора" },
-              ],
-            },
-          },
-        },
-        {
-          name: "show_position_percent",
-          default: true,
-          selector: { boolean: {} },
-        },
-        {
-          name: "scroll_text",
-          default: false,
-          selector: { boolean: {} },
-        },
-      ],
-      computeLabel: (schema) => {
-        switch (schema.name) {
-          case "mode":
-            return "Режим карточки";
-          case "entity":
-            return "Основной сенсор «Далее»";
-          case "default_tab":
-            return "Вкладка по умолчанию";
-          case "title":
-            return "Свой заголовок (необязательно)";
-          case "switch_icon":
-            return "Иконка вместо переключателя (необязательно)";
-          case "drive_indicator":
-            return "Индикатор приводов штор";
-          case "show_position_percent":
-            return "Показывать процент положения штор";
-          case "scroll_text":
-            return "Прокручивать длинные события";
-          default:
-            return schema.name;
-        }
-      },
-      computeHelper: (schema) => {
-        if (schema.name === "mode") {
-          return "Полная — вкладки и подробное управление; краткая — те же сводные плитки без вкладок.";
-        }
-        if (schema.name === "entity") {
-          return "Выберите сенсор «Далее» с основного устройства. Карточка найдёт остальные сущности этой конфигурации Orry автоматически.";
-        }
-        if (schema.name === "drive_indicator") {
-          return "Выберите одну полосу: положение шторы, заряд батареи или отсутствие полосы.";
-        }
-        if (schema.name === "switch_icon") {
-          return "Если не задана, отображается стандартный переключатель; если задана — указанная иконка вместо него.";
-        }
-        if (schema.name === "show_position_percent") {
-          return "Показ процента положения не зависит от выбранной полосы и всегда относится к положению шторы.";
-        }
-        if (schema.name === "scroll_text") {
-          return "Если включено, длинные события в мини-карточках будут прокручиваться вместо обрезания.";
-        }
-        return undefined;
-      },
-    };
+  static getConfigElement() {
+    return createOrryCardEditor();
   }
 
   setConfig(config) {

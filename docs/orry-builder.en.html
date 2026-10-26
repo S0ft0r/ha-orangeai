@@ -1,0 +1,1256 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orry — Lovelace Card Builder</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --primary: #03a9f4;
+      --primary-soft: rgba(3, 169, 244, .09);
+      --text: #212121;
+      --secondary: #72777b;
+      --surface: #fff;
+      --tile: rgba(127, 127, 127, .055);
+      --line: rgba(127, 127, 127, .18);
+      --success: #388e3c;
+      --success-bg: rgba(76, 175, 80, .12);
+      --shadow: 0 2px 8px rgba(0, 0, 0, .11);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 28px 16px;
+      display: grid;
+      place-items: center;
+      background: #f1f3f5;
+      color: var(--text);
+      font-family: Roboto, "Noto Sans", Arial, sans-serif;
+    }
+    body[data-theme="dark"] {
+      color-scheme: dark;
+      --text: #f3f4f5;
+      --secondary: #a5a9ad;
+      --surface: #191a1b;
+      --tile: rgba(255,255,255,.045);
+      --line: rgba(255,255,255,.12);
+      --success-bg: rgba(76,175,80,.18);
+      background: #101112;
+    }
+    body[data-theme="dark"] .card { border-color: rgba(255,255,255,.1); box-shadow: 0 2px 12px rgba(0,0,0,.36); }
+    .stage { width: min(100%, 660px); }
+    .card {
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid rgba(0, 0, 0, .06);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+    }
+    .card.summary-mode { width: 100%; margin: 0; }
+    .card.summary-mode .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card.summary-mode .tabs,
+    .card.summary-mode .panel { display: none; }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px 11px;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 auto; }
+    .avatar {
+      flex: 0 0 42px;
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      color: var(--primary);
+      background: rgba(3, 169, 244, .15);
+      border-radius: 50%;
+    }
+    .avatar svg { width: 23px; height: 23px; }
+    .titles { min-width: 0; flex: 1 1 auto; }
+    .title { font-size: 16px; line-height: 1.25; font-weight: 600; }
+    .subtitle { min-width: 0; margin-top: 2px; overflow: hidden; color: var(--secondary); font-size: 12px; white-space: nowrap; }
+    .subtitle-track { display: inline-flex; align-items: center; width: max-content; white-space: nowrap; }
+    .subtitle-copy { display: inline-block; flex: 0 0 auto; white-space: nowrap; }
+    .subtitle-clone { display: none; }
+    .subtitle.is-scrolling .subtitle-clone { display: inline-block; }
+    .subtitle.is-scrolling .subtitle-track { gap: 28px; animation: subtitle-marquee var(--subtitle-duration, 12s) linear infinite; will-change: transform; }
+    .subtitle.is-scrolling:hover .subtitle-track,
+    .subtitle.is-scrolling:focus-within .subtitle-track { animation-play-state: paused; }
+    @keyframes subtitle-marquee { to { transform: translateX(var(--subtitle-distance, -280px)); } }
+    @media (prefers-reduced-motion: reduce) {
+      .subtitle.is-scrolling .subtitle-track { animation: none; will-change: auto; }
+      .subtitle.is-scrolling .subtitle-clone { display: none; }
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      padding: 2px 16px 14px;
+    }
+    .kpi {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 4px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--tile);
+    }
+    .kpi-top { display: flex; align-items: center; justify-content: space-between; gap: 5px; color: var(--secondary); font-size: 11px; }
+    .kpi-top svg { width: 16px; height: 16px; flex: 0 0 auto; }
+    .kpi-main { min-height: 20px; display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; }
+    .blinds-kpi-main { display: block; width: 100%; min-height: 20px; }
+    #blinds-kpi-main { display: none; }
+    .blinds-summary-range { display: block; width: 100%; margin: 7px 2px; }
+    .kpi-sub { overflow: hidden; color: var(--secondary); font-size: 10px; white-space: nowrap; text-overflow: ellipsis; }
+    .kpi-footer { min-width: 0; width: 100%; display: block; }
+    .device-count-pill { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 2px; min-height: 20px; padding: 3px 8px; border: 1px solid var(--line); border-radius: 999px; color: #147aa5; background: var(--primary-soft); font-size: 10px; line-height: 1; font-weight: 700; white-space: nowrap; }
+    .kpi-next-event { min-width: 0; width: 100%; display: block; overflow: hidden; color: var(--secondary); font-size: 10px; line-height: 1.25; text-align: left; white-space: nowrap; }
+    .kpi-next-event-track { width: 100%; display: block; overflow: hidden; white-space: nowrap; }
+    .kpi-next-event-copy { width: 100%; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .kpi-next-event-clone { display: none; }
+    .kpi-next-event.is-scrolling .kpi-next-event-track { width: max-content; display: inline-flex; align-items: center; gap: 28px; overflow: visible; animation: event-marquee var(--event-duration, 12s) linear infinite; will-change: transform; }
+    .kpi-next-event.is-scrolling .kpi-next-event-copy { width: auto; flex: 0 0 auto; display: inline-block; overflow: visible; text-overflow: clip; }
+    .kpi-next-event.is-scrolling .kpi-next-event-clone { display: inline-block; }
+    .kpi-next-event.is-scrolling:hover .kpi-next-event-track { animation-play-state: paused; }
+    @keyframes event-marquee { to { transform: translateX(var(--event-distance, -280px)); } }
+    @media (prefers-reduced-motion: reduce) {
+      .kpi-next-event.is-scrolling .kpi-next-event-track { width: 100%; display: block; animation: none; will-change: auto; }
+      .kpi-next-event.is-scrolling .kpi-next-event-copy { width: 100%; display: block; overflow: hidden; text-overflow: ellipsis; }
+      .kpi-next-event.is-scrolling .kpi-next-event-clone { display: none; }
+    }
+    .lighting-kpi-main, .watering-kpi-main { justify-content: flex-start; gap: 8px; }
+    .lighting-kpi-button, .watering-kpi-button { display: grid; width: 22px; height: 22px; flex: 0 0 auto; padding: 0; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--state-icon-color, var(--secondary)); cursor: pointer; }
+    .lighting-kpi-button.is-on { color: var(--state-active-color, #fdd835); }
+    .watering-kpi-button.is-on { color: var(--primary); }
+    .lighting-kpi-button:hover, .watering-kpi-button:hover { background: rgba(127, 127, 127, .12); }
+    .lighting-kpi-button:focus-visible, .watering-kpi-button:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+    .lighting-kpi-button svg, .watering-kpi-button svg { width: 16px; height: 16px; }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      background: var(--tile);
+    }
+    .tab {
+      min-width: 0;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      background: transparent;
+      color: var(--secondary);
+      font: 600 12px Roboto, "Noto Sans", Arial, sans-serif;
+      cursor: pointer;
+    }
+    .tab svg { width: 16px; height: 16px; }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); background: rgba(3, 169, 244, .06); }
+
+    .subbar {
+      min-height: 36px;
+      padding: 7px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      border-bottom: 1px solid var(--line);
+      color: var(--secondary);
+      font-size: 11px;
+    }
+    .subbar strong { color: var(--text); font-weight: 600; }
+    .content { padding: 12px 16px 15px; }
+    .range-line {
+      position: relative;
+      height: 4px;
+      margin: 14px 2px 13px;
+      border-radius: 999px;
+      background: rgba(127, 127, 127, .22);
+    }
+    .range-fill { width: 50%; height: 100%; border-radius: inherit; background: var(--primary); }
+    .range-thumb {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 14px;
+      height: 14px;
+      border: 2px solid white;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,.25);
+      transform: translate(-50%, -50%);
+    }
+    .blinds-summary-range-input {
+      position: absolute;
+      z-index: 2;
+      top: 50%;
+      left: -10px;
+      width: calc(100% + 20px);
+      height: 20px;
+      margin: 0;
+      padding: 0;
+      transform: translateY(-50%);
+      opacity: 0;
+      border: 0;
+      background: transparent;
+      -webkit-appearance: none;
+      appearance: none;
+      cursor: pointer;
+    }
+    .blinds-summary-range-input::-webkit-slider-runnable-track { height: 20px; background: transparent; }
+    .blinds-summary-range-input::-webkit-slider-thumb { width: 20px; height: 20px; margin: 0; border: 0; border-radius: 50%; background: transparent; box-shadow: none; -webkit-appearance: none; }
+    .blinds-summary-range-input::-moz-range-track { height: 20px; border: 0; background: transparent; }
+    .blinds-summary-range-input::-moz-range-thumb { width: 20px; height: 20px; border: 0; border-radius: 50%; background: transparent; box-shadow: none; }
+    .blinds-summary-range:focus-within .range-thumb { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .section-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 13px 1px 7px;
+      color: var(--secondary);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+    .entity-list { display: flex; flex-direction: column; }
+    .entity-row {
+      min-height: 46px;
+      display: grid;
+      grid-template-columns: 30px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 9px;
+      padding: 6px 2px;
+      border-bottom: 1px solid rgba(127,127,127,.12);
+    }
+    .entity-row:last-child { border-bottom: 0; }
+    .entity-icon { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; color: var(--primary); background: var(--primary-soft); }
+    .entity-icon svg { width: 16px; height: 16px; }
+    .entity-name { font-size: 12px; font-weight: 500; }
+    .entity-state { margin-top: 2px; color: var(--secondary); font-size: 10px; }
+    .entity-value { color: var(--text); font-size: 12px; font-weight: 600; }
+    .mini-track { width: 76px; height: 4px; margin-top: 5px; overflow: hidden; border-radius: 999px; background: rgba(127,127,127,.20); }
+    .mini-fill { height: 100%; border-radius: inherit; background: var(--primary); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .light-row, .water-row {
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 2px;
+      border-bottom: 1px solid rgba(127,127,127,.12);
+    }
+    .left-entity { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .entity-icon-preview { width: 24px; height: 24px; flex: 0 0 24px; display: grid; place-items: center; color: var(--secondary); }
+    .entity-icon-preview svg { width: 21px; height: 21px; display: block; }
+    .entity-icon-preview.is-on { color: #b88700; }
+    body[data-theme="dark"] .entity-icon-preview.is-on { color: #ffc400; }
+.pill-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .pill-toggle { width: 36px; height: 21px; flex: 0 0 36px; padding: 2px; border: 0; border-radius: 999px; color: white; background: rgba(127,127,127,.34); cursor: pointer; transition: background .18s ease; }
+    .pill-toggle::after { content: ""; width: 17px; height: 17px; display: block; border-radius: 50%; background: white; box-shadow: 0 1px 2px rgba(0,0,0,.2); transition: transform .18s ease; }
+    .pill-toggle.is-on { background: var(--primary); }
+    .pill-toggle.is-on::after { transform: translateX(15px); }
+    .pill-toggle.icon-mode { width: 34px; height: 34px; flex-basis: 34px; display: grid; place-items: center; padding: 0; border-radius: 50%; color: var(--secondary); background: transparent; }
+    .pill-toggle.icon-mode::after { display: none; }
+    .pill-toggle.icon-mode svg { width: 20px; height: 20px; display: block; }
+    .pill-toggle.icon-mode.is-on { color: #b88700; background: transparent; }
+    body[data-theme="dark"] .pill-toggle.icon-mode.is-on { color: #ffc400; }
+    .pill-toggle:disabled { opacity: .45; cursor: not-allowed; }
+    .switch { 
+      width: 34px;
+      height: 20px;
+      flex: 0 0 auto;
+      padding: 2px;
+      border-radius: 999px;
+      background: var(--primary);
+    }
+    .switch::after { content: ""; width: 16px; height: 16px; display: block; margin-left: 14px; border-radius: 50%; background: white; box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+    .secondary-action { padding: 5px 9px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--text); font-size: 11px; }
+    .watering-top { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid rgba(127,127,127,.12); }
+    .watering-schedule { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 9px; }
+    .schedule-chip { padding: 9px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--tile); }
+    .schedule-chip span { display: block; color: var(--secondary); font-size: 10px; }
+    .schedule-chip strong { display: block; margin-top: 4px; font-size: 12px; }
+    .toggle-row { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 2px; border-bottom: 1px solid rgba(127,127,127,.12); }
+    .toggle-label { font-size: 12px; font-weight: 600; }
+    .toggle-sub { margin-top: 3px; color: var(--secondary); font-size: 10px; }
+    .execute-btn:focus-visible, .watering-select:focus-visible { outline: 2px solid #147aa5; outline-offset: 2px; }
+    .schedule-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 10px 0 13px; }
+    .schedule-tile { min-width: 0; padding: 9px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--tile); }
+    .schedule-title { color: var(--secondary); font-size: 10px; }
+    .schedule-value { margin-top: 4px; font-size: 17px; font-weight: 700; }
+    .schedule-extra { margin-top: 2px; color: var(--secondary); font-size: 10px; }
+    .zone-list { overflow: hidden; border: 1px solid var(--line); border-radius: 9px; }
+    .zone-row { padding: 9px 10px; border-bottom: 1px solid rgba(127,127,127,.12); }
+    .zone-row:last-child { border-bottom: 0; }
+    .zone-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .zone-name { font-size: 12px; font-weight: 600; }
+    .zone-state { flex: 0 0 auto; color: var(--secondary); font-size: 9px; }
+    .zone-state.active-zone { padding: 3px 7px; border-radius: 999px; color: #2e7d32; background: var(--success-bg); font-weight: 600; }
+    .zone-info { margin-top: 5px; color: var(--secondary); font-size: 10px; line-height: 1.45; }
+    .zone-info span { padding: 0 3px; color: #a0a5a9; }
+    .inactive-zone { background: rgba(127,127,127,.025); }
+    .manual-label { margin-top: 14px; }
+    .watering-select-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+    .watering-select { min-width: 0; height: 36px; padding: 0 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--text); background: var(--surface); font: 12px Roboto, "Noto Sans", Arial, sans-serif; }
+    .execute-btn { min-width: 112px; height: 36px; padding: 0 11px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 8px; color: white; background: var(--primary); font: 600 11px Roboto, "Noto Sans", Arial, sans-serif; cursor: pointer; }
+    .execute-btn svg { width: 15px; height: 15px; }
+    .execute-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .execute-btn.is-stop { background: #d64b4b; }
+    .manual-hint { margin-top: 7px; color: var(--secondary); font-size: 10px; line-height: 1.45; }
+    .drive-demo {
+      --drive-surface: var(--surface);
+      --drive-surface-raised: var(--tile);
+      --drive-text: var(--text);
+      --drive-muted: var(--secondary);
+      --drive-line: var(--line);
+      --drive-accent: var(--primary);
+      --drive-accent-soft: var(--primary-soft);
+      --drive-track: rgba(127,127,127,.2);
+      --drive-hatch: rgba(0,0,0,.055);
+      --drive-green: #4caf50;
+      --drive-yellow: #fdd835;
+      --drive-orange: #ff9800;
+      --drive-red: #f44336;
+      overflow: hidden;
+      margin-top: 0;
+      border: 1px solid var(--drive-line);
+      border-radius: 12px;
+      color-scheme: light;
+      color: var(--drive-text);
+      background: var(--drive-surface);
+      box-shadow: 0 6px 20px rgba(0,0,0,.12);
+    }
+    body[data-theme="dark"] .drive-demo {
+      --drive-surface: #191a1b;
+      --drive-surface-raised: #202224;
+      --drive-text: #f3f4f5;
+      --drive-muted: #a5a9ad;
+      --drive-line: rgba(255,255,255,.12);
+      --drive-accent: #12b9e7;
+      --drive-accent-soft: rgba(18,185,231,.11);
+      --drive-track: rgba(255,255,255,.15);
+      --drive-hatch: rgba(255,255,255,.07);
+      color-scheme: dark;
+      box-shadow: 0 6px 20px rgba(0,0,0,.28);
+    }
+    .drive-settings {
+      --drive-surface-raised: #202224;
+      --drive-text: #f3f4f5;
+      --drive-muted: #a5a9ad;
+      --drive-line: rgba(255,255,255,.12);
+      --drive-accent: #12b9e7;
+      display: grid;
+      grid-template-columns: minmax(0,1fr);
+      align-items: start;
+      gap: 12px 20px;
+      margin-bottom: 14px;
+      padding: 13px 16px;
+      border: 1px solid var(--drive-line);
+      border-radius: 12px;
+      color-scheme: dark;
+      color: var(--drive-text);
+      background: var(--drive-surface-raised);
+    }
+    .drive-settings-heading { grid-column: 1 / -1; margin: 0; color: var(--drive-text); font-size: 12px; font-weight: 700; }
+    .builder-fields { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px 12px; }
+    .builder-fields .field-title { grid-column: 1 / -1; margin: 0 0 1px; color: var(--drive-muted); font-size: 10px; font-weight: 600; }
+    .drive-setting-label { display: block; margin-bottom: 6px; color: var(--drive-muted); font-size: 10px; font-weight: 600; }
+    .field-help { display: block; margin-top: 5px; color: var(--drive-muted); font-size: 9px; line-height: 1.35; }
+    .drive-select { width: 100%; min-height: 36px; padding: 0 9px; border: 1px solid rgba(255,255,255,.2); border-radius: 8px; color: var(--drive-text); background: #151718; font: 500 11px Roboto, "Noto Sans", Arial, sans-serif; }
+    .drive-select:focus-visible, .drive-icon-input:focus-visible, .drive-toggle-label input:focus-visible, .drive-theme-switch:focus-visible { outline: 2px solid var(--drive-accent); outline-offset: 2px; }
+    .drive-toggle-label { display: flex; align-items: center; gap: 8px; min-height: 22px; color: var(--drive-text); font-size: 11px; font-weight: 600; cursor: pointer; }
+    .drive-toggle-label input { width: 15px; height: 15px; margin: 0; accent-color: var(--drive-accent); }
+    .drive-control-left, .drive-control-stack { display: flex; flex-direction: column; gap: 10px; }
+    .drive-icon-input { width: 100%; min-height: 34px; padding: 0 9px; border: 1px solid rgba(255,255,255,.2); border-radius: 8px; color: var(--drive-text); background: #151718; font: 500 11px Roboto, "Noto Sans", Arial, sans-serif; }
+    .preview-controls { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 11px; border-top: 1px solid var(--drive-line); }
+    .preview-controls-title { margin: 0; color: var(--drive-muted); font-size: 10px; font-weight: 600; }
+    .drive-theme-row { display: flex; align-items: center; gap: 9px; min-height: 36px; }
+    .drive-theme-label { color: var(--drive-muted); font-size: 10px; font-weight: 600; }
+    .drive-theme-switch { width: 36px; height: 21px; flex: 0 0 auto; padding: 2px; border: 0; border-radius: 999px; background: rgba(255,255,255,.25); cursor: pointer; transition: background .18s ease; }
+    .drive-theme-switch span { width: 17px; height: 17px; display: block; border-radius: 50%; background: white; box-shadow: 0 1px 2px rgba(0,0,0,.2); transition: transform .18s ease; }
+    .drive-theme-switch[aria-checked="true"] { background: var(--drive-accent); }
+    .drive-theme-switch[aria-checked="true"] span { transform: translateX(15px); }
+    .drive-theme-switch:focus-visible { outline-offset: 3px; }
+    .drive-theme-value { min-width: 46px; color: var(--drive-muted); font-size: 10px; }
+    .yaml-builder { margin-top: 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
+    .yaml-builder-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 9px; }
+    .yaml-builder-title { margin: 0; font-size: 14px; font-weight: 700; }
+    .yaml-builder-status { color: var(--secondary); font-size: 11px; }
+    .yaml-output { width: 100%; min-height: 164px; resize: vertical; padding: 11px 12px; border: 1px solid var(--line); border-radius: 9px; color: var(--text); background: var(--tile); font: 12px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; tab-size: 2; }
+    .yaml-builder-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 9px; }
+    .yaml-copy { min-height: 34px; padding: 0 13px; border: 0; border-radius: 8px; color: #fff; background: #147aa5; font: 600 11px Roboto, "Noto Sans", Arial, sans-serif; cursor: pointer; }
+    .yaml-copy:hover { background: #0d668d; }
+    .yaml-copy:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .drive-section-heading, .drive-row { display: grid; grid-template-columns: 34px minmax(0,1fr) 34px 34px; column-gap: 9px; }
+    .drive-section-heading { align-items: center; min-height: 37px; padding: 0 14px; border-bottom: 1px solid var(--drive-line); color: var(--drive-muted); font-size: 11px; }
+    .drive-section-heading .sun-header { grid-column: 3; }
+    .drive-section-heading .work-header { grid-column: 4; }
+    .drive-header-icon { width: 100%; height: 22px; display: grid; place-items: center; color: var(--drive-muted); }
+    .drive-header-icon svg { width: 21px; height: 21px; }
+    .drive-rows { padding: 0 14px 3px; }
+    .drive-row { position: relative; --drive-last-cell-width: 34px; align-items: center; padding: 9px 0 10px; border-bottom: 1px solid var(--drive-line); }
+    .drive-row:last-child { border-bottom: 0; }
+    .drive-row.is-disabled::before { content: ""; position: absolute; z-index: 0; inset: 0 var(--drive-last-cell-width) 0 0; background-image: repeating-linear-gradient(135deg, transparent 0 7px, var(--drive-hatch) 7px 9px); pointer-events: none; }
+    .drive-row > * { position: relative; z-index: 1; }
+    .drive-row.is-disabled > :not(:last-child) { opacity: .48; transition: opacity .18s ease; }
+    .drive-blind-icon { width: 30px; height: 30px; display: grid; place-items: center; color: var(--drive-accent); }
+    .drive-blind-icon svg { width: 20px; height: 20px; overflow: visible; }
+    .drive-row-main { min-width: 0; }
+    .drive-name-line { min-height: 17px; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .drive-name { min-width: 0; overflow: hidden; font-size: 11px; font-weight: 600; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+    .drive-position-value { flex: 0 0 auto; color: var(--drive-text); font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .drive-position-value[hidden], .drive-track[hidden] { display: none; }
+    .drive-track { width: 100%; height: 4px; margin-top: 5px; overflow: hidden; border-radius: 999px; background: var(--drive-track); }
+    .drive-fill { width: 0; height: 100%; border-radius: inherit; transition: width .25s ease, background-color .25s ease; }
+    .drive-position-fill { background: var(--drive-accent); }
+    .drive-battery-green { background: var(--drive-green); }
+    .drive-battery-yellow { background: var(--drive-yellow); }
+    .drive-battery-orange { background: var(--drive-orange); }
+    .drive-battery-red { background: var(--drive-red); }
+    .drive-check-cell { position: relative; min-height: 24px; display: grid; place-items: center; cursor: pointer; }
+    .drive-check-cell input { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+    .drive-check-icon { width: 20px; height: 20px; display: block; overflow: visible; color: var(--state-icon-color, var(--drive-muted)); pointer-events: none; }
+    .drive-check-cell input:checked + .drive-check-icon { color: var(--state-active-color, var(--drive-accent)); }
+    .drive-check-icon .icon-marked { display: none; }
+    .drive-check-cell input:checked + .drive-check-icon .icon-blank { display: none; }
+    .drive-check-cell input:checked + .drive-check-icon .icon-marked { display: block; }
+    .drive-check-cell input:focus-visible + .drive-check-icon { outline: 2px solid var(--drive-accent); outline-offset: 2px; border-radius: 3px; }
+    .drive-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    @media (max-width: 600px) {
+      .drive-settings { grid-template-columns: 1fr; gap: 10px; padding: 10px 12px; }
+      .builder-fields { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .preview-controls { align-items: flex-start; flex-direction: column; gap: 8px; }
+      .drive-section-heading, .drive-row { grid-template-columns: 28px minmax(0,1fr) 28px 28px; column-gap: 6px; }
+      .drive-section-heading { padding-left: 12px; padding-right: 12px; }
+      .drive-rows { padding-left: 12px; padding-right: 12px; }
+      .drive-row { --drive-last-cell-width: 28px; }
+      .drive-blind-icon { width: 26px; height: 26px; }
+      .drive-blind-icon svg { width: 18px; height: 18px; }
+    }
+    @media (max-width: 380px) {
+      .drive-section-heading, .drive-row { grid-template-columns: 24px minmax(0,1fr) 25px 25px; column-gap: 5px; }
+      .drive-row { --drive-last-cell-width: 25px; }
+      .drive-name, .drive-position-value { font-size: 10px; }
+    }
+    @media (max-width: 440px) {
+      body { padding: 12px 8px; }
+      .builder-fields { grid-template-columns: 1fr; }
+      .yaml-builder { padding: 12px; }
+      .yaml-builder-header { align-items: flex-start; flex-direction: column; }
+      .header { padding-left: 12px; padding-right: 12px; }
+      .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); padding-left: 12px; padding-right: 12px; }
+      .kpi:last-child { grid-column: auto; }
+      .kpi { padding: 7px 6px; }
+      .kpi-top { gap: 3px; font-size: 9px; }
+      .kpi-top .device-count-pill { min-height: 18px; padding: 2px 4px; font-size: 8px; }
+      .kpi-main { font-size: 12px; }
+      .kpi-sub { font-size: 9px; }
+      .device-count-pill { padding: 2px 4px; font-size: 8px; }
+      .kpi-next-event { font-size: 9px; }
+      .content { padding-left: 12px; padding-right: 12px; }
+      .tab { gap: 4px; font-size: 11px; }
+    }
+  </style>
+</head>
+<body data-theme="light">
+  <main class="stage">
+    <section class="drive-settings" aria-label="Card settings and preview options">
+      <h2 class="drive-settings-heading">Orry YAML card settings</h2>
+      <div class="builder-fields">
+        <p class="field-title">Options included in the YAML</p>
+        <div>
+          <label class="drive-setting-label" for="card-mode">Card mode (mode)</label>
+          <select class="drive-select" id="card-mode">
+            <option value="full">Full (full)</option>
+            <option value="summary">Summary (summary)</option>
+          </select>
+          <span class="field-help">Full mode provides module controls; summary mode shows the header and overview tiles.</span>
+        </div>
+        <div>
+          <label class="drive-setting-label" for="card-entity">Next sensor (entity)</label>
+          <input class="drive-icon-input" id="card-entity" type="text" value="sensor.orangery_next_action" spellcheck="false" autocomplete="off">
+        </div>
+        <div>
+          <label class="drive-setting-label" for="card-default-tab">Default tab</label>
+          <select class="drive-select" id="card-default-tab">
+            <option value="blinds">Blinds</option>
+            <option value="phytolamp">Lighting</option>
+            <option value="watering">Watering</option>
+          </select>
+        </div>
+        <div>
+          <label class="drive-setting-label" for="card-title-input">Title (optional)</label>
+          <input class="drive-icon-input" id="card-title-input" type="text" value="Orangery" autocomplete="off">
+        </div>
+        <div>
+          <label class="drive-setting-label" for="switch-icon-name">Icon instead of the toggle (<code>switch_icon</code>, optional)</label>
+          <input class="drive-icon-input" id="switch-icon-name" type="text" placeholder="mdi:power" spellcheck="false" autocomplete="off">
+          <span class="field-help">Leave blank to use the standard toggle. The preview uses a simplified icon; Home Assistant will display the selected icon.</span>
+        </div>
+        <div>
+          <label class="drive-setting-label" for="drive-indicator-mode">Blind indicator</label>
+          <select class="drive-select" id="drive-indicator-mode">
+            <option value="position">Blind position</option>
+            <option value="battery">Battery level</option>
+            <option value="none">No bar</option>
+          </select>
+        </div>
+        <div>
+          <span class="drive-setting-label">Position percentage</span>
+          <label class="drive-toggle-label" for="drive-show-position-percent">
+            <input id="drive-show-position-percent" type="checkbox" checked>
+            <span>Show percentage</span>
+          </label>
+        </div>
+        <div>
+          <label class="drive-toggle-label" for="scroll-text">
+            <input id="scroll-text" type="checkbox">
+            <span>Scroll long event messages</span>
+          </label>
+          <span class="field-help">For long events in the third line of the summary tiles; when enabled, the YAML includes <code>scroll_text: true</code>.</span>
+        </div>
+      </div>
+      <div class="preview-controls">
+        <p class="preview-controls-title">Preview theme — not included in YAML</p>
+        <div class="drive-theme-row">
+          <span class="drive-theme-label">Theme</span>
+          <button class="drive-theme-switch" id="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Switch preview to dark theme"><span></span></button>
+          <span class="drive-theme-value" id="theme-name">Light</span>
+        </div>
+      </div>
+    </section>
+    <article class="card" id="card-preview" aria-label="Full Orry card preview">
+      <header class="header">
+        <div class="header-left">
+          <div class="avatar" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20.5h17M5.5 20.5V9l6.5-5 6.5 5v11.5M9 20.5v-6h6v6M8 10.5h.01M12 10.5h.01M16 10.5h.01"/><path d="M12 8.5c-1.7-2.1-4.3-1.4-4.3.5 0 1.7 2.2 2.2 4.3 3.8 2.1-1.6 4.3-2.1 4.3-3.8 0-1.9-2.6-2.6-4.3-.5Z"/></svg>
+          </div>
+          <div class="titles">
+            <div class="title" id="card-title">Orangery</div>
+            <div class="subtitle" id="card-subtitle">
+              <span class="subtitle-track" id="card-subtitle-track">
+                <span class="subtitle-copy" id="card-subtitle-text">Lighting off · 07:10</span>
+                <span class="subtitle-copy subtitle-clone" id="card-subtitle-clone" aria-hidden="true"></span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="kpi-grid" aria-label="Module overview">
+        <div class="kpi">
+          <div class="kpi-top">
+            <span>Blinds</span>
+            <span class="device-count-pill blinds-kpi-counts" id="blinds-kpi-counts" aria-label="5 devices, 4 active blinds, 0 errors">
+              <span id="blinds-device-count" title="Total devices">5</span>
+              <span aria-hidden="true"> / </span>
+              <span id="blinds-active-count" title="Active blinds">4</span>
+              <span aria-hidden="true"> / </span>
+              <span id="blinds-error-count" title="Errors">0</span>
+            </span>
+          </div>
+          <div class="kpi-main blinds-kpi-main">
+            <span id="blinds-kpi-main">50%</span>
+            <div class="range-line blinds-summary-range" id="blinds-summary-range">
+              <div class="range-fill" id="blinds-summary-range-fill" style="width: 63%"></div>
+              <div class="range-thumb" id="blinds-summary-range-thumb" style="left: 63%"></div>
+              <input class="blinds-summary-range-input" id="blinds-summary-range-input" type="range" min="0" max="100" step="1" value="63" aria-label="Set active blind position">
+            </div>
+          </div>
+          <div class="kpi-footer">
+            <span class="kpi-next-event" id="blinds-next-event" title="Orangery blinds will close automatically today at 20:00" aria-label="Orangery blinds will close automatically today at 20:00">
+              <span class="kpi-next-event-track">
+                <span class="kpi-next-event-copy">Orangery blinds will close automatically today at 20:00</span>
+                <span class="kpi-next-event-copy kpi-next-event-clone" aria-hidden="true"></span>
+              </span>
+            </span>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-top">
+            <span>Lighting</span>
+            <span class="device-count-pill" id="lighting-kpi-sub" aria-label="Total devices: 2, on: 2" title="Total devices: 2, on: 2">2 / 2</span>
+          </div>
+          <div class="kpi-main lighting-kpi-main" id="lighting-kpi-main">
+            <button class="lighting-kpi-button is-on" id="lighting-kpi-button" type="button" aria-label="Turn lighting off" aria-pressed="true" title="Turn lighting off">
+              <svg data-icon="mdi:lightbulb-outline" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5"/></svg>
+            </button>
+          </div>
+          <div class="kpi-footer">
+            <span class="kpi-next-event" id="lighting-next-event" title="Plant lighting will turn off automatically today at 21:00" aria-label="Plant lighting will turn off automatically today at 21:00">
+              <span class="kpi-next-event-track">
+                <span class="kpi-next-event-copy">Plant lighting will turn off automatically today at 21:00</span>
+                <span class="kpi-next-event-copy kpi-next-event-clone" aria-hidden="true"></span>
+              </span>
+            </span>
+          </div>
+        </div>
+        <div class="kpi" id="watering-kpi">
+          <div class="kpi-top">
+            <span>Watering</span>
+            <span class="device-count-pill" id="watering-kpi-counts" aria-label="Configured zones: 3, active: 2" title="Configured zones: 3, active: 2">3 / 2</span>
+          </div>
+          <div class="kpi-main watering-kpi-main">
+            <button class="watering-kpi-button is-on" id="watering-kpi-button" type="button" aria-label="Turn auto watering off" aria-pressed="true" title="Turn auto watering off">
+              <svg id="watering-kpi-icon" data-icon="mdi:watering-can" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.5 7.47c-.74.73-.93 1.78-.58 2.68L15 13.07V11c0-.55-.45-1-1-1h-1.03c.03-.17.03-.33.03-.5C13 6.46 10.54 4 7.5 4A5.497 5.497 0 0 0 4 13.74V20c0 .55.45 1 1 1h9c.55 0 1-.45 1-1v-4.11l4.33-4.33c.9.35 1.95.17 2.67-.56zM4.05 10C4.03 9.83 4 9.67 4 9.5C4 7.57 5.57 6 7.5 6S11 7.57 11 9.5c0 .17-.03.33-.05.5z"/></svg>
+            </button>
+          </div>
+          <div class="kpi-footer">
+            <span class="kpi-next-event" id="watering-next-event" title="Next scheduled watering is today at 20:00" aria-label="Next scheduled watering is today at 20:00">
+              <span class="kpi-next-event-track">
+                <span class="kpi-next-event-copy">Next scheduled watering is today at 20:00</span>
+                <span class="kpi-next-event-copy kpi-next-event-clone" aria-hidden="true"></span>
+              </span>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <nav class="tabs" aria-label="Orangery modules">
+        <button class="tab active" data-tab="blinds"><svg data-icon="orry:blind-50" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.00 3.00L20.00 3.00L20.00 19.00L22.00 19.00L22.00 21.00L2.00 21.00L2.00 19.00L4.00 19.00ZM6.00 5.00L6.00 19.00L18.00 19.00L18.00 5.00L16.70 5.00L16.70 13.00L7.30 13.00L7.30 5.00Z"/></svg>Blinds</button>
+        <button class="tab" data-tab="phytolamp"><svg data-icon="orry:phytolamp" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.03,12.40C12.75,11.76 9.51,9.90 7.76,8.27C6.90,7.44 6.61,6.84 6.84,6.55C8.51,3.88 11.68,2.78 14.33,3.91C14.29,3.77 14.27,3.62 14.27,3.47C14.27,3.18 14.35,2.90 14.50,2.65C14.65,2.40 14.86,2.20 15.11,2.06C15.36,1.92 15.64,1.84 15.93,1.84C16.22,1.84 16.50,1.92 16.75,2.06C17.00,2.20 17.21,2.40 17.36,2.65C17.51,2.90 17.59,3.18 17.60,3.47C17.60,3.73 17.54,3.98 17.42,4.21C17.31,4.44 17.14,4.65 16.93,4.80C16.72,4.96 16.48,5.06 16.23,5.10L20.35,9.05Q20.90,9.58 20.90,10.13L20.90,19.65C22.69,19.80 23.19,20.20 23.19,20.80C23.19,21.65 21.99,22.00 20.09,22.00C18.19,22.00 16.99,21.65 16.99,20.80C16.99,20.20 17.49,19.80 19.28,19.65L19.28,10.25L17.72,8.75C17.77,9.36 17.73,9.97 17.60,10.57C17.48,11.17 17.27,11.75 16.99,12.29C16.85,12.65 16.19,12.72 15.03,12.40ZM6.88,22.00C5.97,22.00 5.08,21.76 4.30,21.31C3.52,20.86 2.86,20.20 2.41,19.42C1.96,18.64 1.72,17.75 1.72,16.84L1.72,12.54C2.36,12.54 2.98,12.64 3.58,12.88C4.05,13.07 4.47,13.37 4.82,13.74L6.88,11.68L8.94,13.74C9.29,13.37 9.71,13.07 10.18,12.88C10.78,12.64 11.40,12.54 12.04,12.54L12.04,16.84C12.04,17.75 11.80,18.64 11.35,19.42C10.90,20.20 10.24,20.86 9.46,21.31C8.68,21.76 7.79,22.00 6.88,22.00ZM10.32,14.78L8.97,16.20L6.88,14.11L4.79,16.20L3.44,14.78L3.44,16.84C3.44,17.29 3.53,17.74 3.70,18.16C3.87,18.57 4.13,18.95 4.45,19.27C4.77,19.59 5.15,19.85 5.56,20.02C5.98,20.19 6.43,20.28 6.88,20.28C7.33,20.28 7.78,20.19 8.20,20.02C8.61,19.85 8.99,19.59 9.31,19.27C9.63,18.95 9.89,18.57 10.06,18.16C10.23,17.74 10.32,17.29 10.32,16.84ZM10.18,6.58C8.60,6.05 8.29,6.48 9.53,7.57C10.79,8.67 13.13,9.99 14.72,10.51C16.29,11.02 16.51,10.54 15.24,9.45C13.99,8.38 11.74,7.10 10.18,6.58Z"/></svg>Lighting</button>
+        <button class="tab" data-tab="watering"><svg data-icon="orry:watering" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9.11,6.63C9.88,7.09 10.26,7.93 10.15,8.75L14.24,11.20L13.60,8.64C13.49,8.18 13.77,7.71 14.23,7.60L14.12,7.18C13.95,6.49 13.96,5.76 14.16,5.07C14.36,4.38 14.73,3.75 15.25,3.26C15.76,2.76 16.40,2.40 17.10,2.23C17.79,2.06 18.52,2.07 19.21,2.27C19.90,2.47 20.53,2.84 21.02,3.36C21.52,3.87 21.88,4.51 22.05,5.21C22.41,6.63 22.07,8.06 21.26,9.16L22.57,14.38C22.68,14.84 22.40,15.31 21.94,15.43L16.51,16.78C16.06,16.89 15.59,16.61 15.47,16.15L14.83,13.56L9.27,10.22C8.59,10.70 7.68,10.77 6.92,10.31ZM6.88,22.00C5.97,22.00 5.08,21.76 4.30,21.31C3.52,20.86 2.86,20.20 2.41,19.42C1.96,18.64 1.72,17.75 1.72,16.84L1.72,12.54C2.36,12.54 2.98,12.64 3.58,12.88C4.05,13.07 4.47,13.37 4.82,13.74L6.88,11.68L8.94,13.74C9.29,13.37 9.71,13.07 10.18,12.88C10.78,12.64 11.40,12.54 12.04,12.54L12.04,16.84C12.04,17.75 11.80,18.64 11.35,19.42C10.90,20.20 10.24,20.86 9.46,21.31C8.68,21.76 7.79,22.00 6.88,22.00ZM10.32,14.78L8.97,16.20L6.88,14.11L4.79,16.20L3.44,14.78L3.44,16.84C3.44,17.29 3.53,17.74 3.70,18.16C3.87,18.57 4.13,18.95 4.45,19.27C4.77,19.59 5.15,19.85 5.56,20.02C5.98,20.19 6.43,20.28 6.88,20.28C7.33,20.28 7.78,20.19 8.20,20.02C8.61,19.85 8.99,19.59 9.31,19.27C9.63,18.95 9.89,18.57 10.06,18.16C10.23,17.74 10.32,17.29 10.32,16.84ZM16.93,14.90L20.69,13.97L19.23,8.13L15.48,9.06ZM20.44,6.05L20.34,5.63C20.20,5.28 19.98,4.97 19.69,4.72C19.40,4.47 19.06,4.30 18.69,4.21C18.32,4.12 17.94,4.12 17.57,4.21C17.20,4.31 16.86,4.48 16.58,4.74C16.29,4.99 16.07,5.30 15.94,5.66C15.80,6.01 15.75,6.39 15.79,6.77L15.90,7.18Z"/></svg>Watering</button>
+      </nav>
+
+      <section class="panel active" id="panel-blinds">
+        <div class="content">
+          <section class="drive-demo" aria-label="Drive indicator preview">
+            <div class="drive-section-heading" aria-label="Column icons">
+              <span class="drive-header-icon sun-header" title="Sun protection" aria-label="Sun protection">
+                <svg data-icon="orry:blind-sun" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.00,3.00L20.00,3.00L20.00,8.51L19.59,8.38L18.88,8.23L18.15,8.13L18.00,8.13L18.00,5.00L16.70,5.00L16.70,8.13L16.70,8.13L15.98,8.23L15.26,8.38L14.57,8.60L13.90,8.88L13.25,9.22L12.64,9.61L12.06,10.05L11.52,10.55L11.03,11.08L10.59,11.66L10.19,12.27L9.86,12.92L9.58,13.59L9.36,14.29L9.20,15.00L9.11,15.72L9.08,16.45L9.11,17.18L9.19,17.80L7.30,17.80L7.30,5.00L6.00,5.00L6.00,19.00L9.48,19.00L9.58,19.31L9.86,19.98L10.19,20.62L10.43,21.00L2.00,21.00L2.00,19.00L4.00,19.00ZM17.43,12.96C18.03,12.96 18.64,13.13 19.18,13.43C19.69,13.74 20.14,14.18 20.44,14.70C20.75,15.23 20.91,15.84 20.91,16.45C20.91,17.06 20.75,17.67 20.44,18.20C20.14,18.72 19.69,19.16 19.18,19.47C18.64,19.77 18.03,19.94 17.43,19.94C16.82,19.94 16.21,19.77 15.68,19.47C15.16,19.16 14.71,18.72 14.41,18.20C14.11,17.67 13.94,17.06 13.94,16.45C13.94,15.84 14.11,15.23 14.41,14.70C14.71,14.18 15.16,13.74 15.68,13.43C16.21,13.13 16.82,12.96 17.43,12.96ZM17.43,14.56C17.10,14.56 16.77,14.65 16.49,14.81C16.20,14.98 15.96,15.22 15.79,15.51C15.63,15.79 15.54,16.12 15.54,16.45C15.54,16.78 15.63,17.11 15.79,17.39C15.96,17.68 16.20,17.92 16.49,18.09C16.77,18.25 17.10,18.34 17.43,18.34C17.76,18.34 18.09,18.25 18.36,18.09C18.66,17.92 18.90,17.68 19.06,17.39C19.23,17.11 19.31,16.78 19.31,16.45C19.31,16.12 19.23,15.79 19.06,15.51C18.90,15.22 18.66,14.98 18.36,14.81C18.09,14.65 17.76,14.56 17.43,14.56ZM17.43,9.20L19.24,11.85C18.68,11.63 18.06,11.51 17.43,11.51C16.79,11.51 16.17,11.63 15.61,11.85ZM17.43,23.70L15.61,21.05C16.17,21.27 16.79,21.41 17.43,21.41C18.06,21.41 18.68,21.27 19.24,21.05ZM23.70,20.08L20.57,20.35C21.05,19.94 21.47,19.44 21.75,18.88C22.09,18.34 22.31,17.78 22.38,17.15ZM11.15,20.08L12.48,17.15C12.55,17.78 12.75,18.34 13.10,18.88C13.38,19.44 13.80,19.94 14.28,20.35ZM23.70,12.83L22.38,15.75C22.31,15.12 22.09,14.56 21.75,14.02C21.47,13.46 21.05,12.96 20.57,12.55ZM11.15,12.83L14.28,12.55C13.80,12.96 13.38,13.46 13.10,14.02C12.75,14.56 12.55,15.12 12.48,15.75Z"/></svg>
+              </span>
+              <span class="drive-header-icon work-header" title="Include blind in automation" aria-label="Include blind in automation">
+                <svg data-icon="orry:blind-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4.00,3.00L20.00,3.00L20.00,10.11L19.40,9.86L18.77,9.66L18.12,9.52L18.00,9.50L18.00,5.00L16.70,5.00L16.70,9.40L16.14,9.43L15.48,9.52L14.83,9.66L14.20,9.86L13.59,10.11L13.00,10.42L12.44,10.77L11.91,11.18L11.43,11.63L10.98,12.11L10.57,12.64L10.22,13.20L9.91,13.79L9.66,14.40L9.46,15.03L9.36,15.50L7.30,15.50L7.30,5.00L6.00,5.00L6.00,19.00L9.47,19.00L9.66,19.60L9.91,20.21L10.22,20.80L10.35,21.00L2.00,21.00L2.00,19.00L4.00,19.00ZM13.26,12.24L15.71,12.24L15.71,21.76L13.26,21.76L13.26,12.24M17.89,12.24L20.34,12.24L20.34,21.76L17.89,21.76L17.89,12.24Z"/></svg>
+              </span>
+            </div>
+            <div class="drive-rows" id="drive-list"></div>
+          </section>
+          <template id="drive-row-template">
+            <div class="drive-row">
+              <div class="drive-blind-icon" role="img"><svg class="drive-state-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"></svg></div>
+              <div class="drive-row-main">
+                <div class="drive-name-line"><span class="drive-name"></span><span class="drive-position-value"></span></div>
+                <div class="drive-track"><div class="drive-fill"></div></div>
+              </div>
+              <label class="drive-check-cell">
+                <input type="checkbox" data-kind="sun">
+                <svg class="drive-check-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path class="icon-blank" data-icon="mdi:checkbox-blank-outline" d="M19 3H5c-1.11 0-2 .89-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2m0 2v14H5V5z"/>
+                  <path class="icon-marked" data-icon="mdi:checkbox-marked-outline" d="M19 19H5V5h10V3H5c-1.11 0-2 .89-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-8h-2m-11.09-.92L6.5 11.5L11 16L21 6l-1.41-1.42L11 13.17z"/>
+                </svg>
+                <span class="drive-sr-only">Sun protection</span>
+              </label>
+              <label class="drive-check-cell">
+                <input type="checkbox" data-kind="work">
+                <svg class="drive-check-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path class="icon-blank" data-icon="mdi:checkbox-blank-outline" d="M19 3H5c-1.11 0-2 .89-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2m0 2v14H5V5z"/>
+                  <path class="icon-marked" data-icon="mdi:checkbox-marked-outline" d="M19 19H5V5h10V3H5c-1.11 0-2 .89-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-8h-2m-11.09-.92L6.5 11.5L11 16L21 6l-1.41-1.42L11 13.17z"/>
+                </svg>
+                <span class="drive-sr-only">Included in automation</span>
+              </label>
+            </div>
+          </template>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-phytolamp">
+        <div class="subbar"><span><strong>Plant lighting</strong></span><span id="lighting-panel-summary">On · 1 device</span></div>
+        <div class="content">
+          <div class="light-row icon-config-row">
+            <div class="left-entity">
+              <div class="entity-icon-preview is-on" id="entity-icon-preview" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v3H7zM8 7v12m8-12v12M6 20h12M10 10h4"/></svg>
+              </div>
+              <div class="entity-name">Lighting</div>
+            </div>
+            <button class="pill-toggle is-on" id="lighting-pill-toggle" data-switch-control type="button" aria-label="Lighting state" aria-pressed="true"></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-watering">
+        <div class="subbar"><span><strong>Watering schedule</strong></span><span><b>2</b> active zones · <span id="watering-status" aria-live="polite">Next cycle at 20:00</span></span></div>
+        <div class="content">
+          <div class="toggle-row">
+            <div><div class="toggle-label">Auto watering</div><div class="toggle-sub" id="auto-status">On</div></div>
+            <button class="pill-toggle is-on" id="auto-toggle" data-switch-control type="button" aria-pressed="true" aria-label="Auto watering"></button>
+          </div>
+          <div class="toggle-row">
+            <div><div class="toggle-label">Skip next watering</div><div class="toggle-sub" id="skip-status">Not scheduled</div></div>
+            <button class="pill-toggle" id="skip-toggle" data-switch-control type="button" aria-pressed="false" aria-label="Skip next watering"></button>
+          </div>
+
+          <div class="schedule-grid">
+            <div class="schedule-tile"><div class="schedule-title">Morning watering</div><div class="schedule-value">08:00</div><div class="schedule-extra">Daily</div></div>
+            <div class="schedule-tile"><div class="schedule-title">Evening watering</div><div class="schedule-value">20:00</div><div class="schedule-extra">Daily</div></div>
+          </div>
+
+          <div class="section-label"><span>Watering zones</span><span>3 configured · 2 active</span></div>
+          <div class="zone-list">
+            <div class="zone-row">
+              <div class="zone-top"><span class="zone-name">Tomatoes</span><span class="zone-state active-zone">Active</span></div>
+              <div class="zone-info">Morning: daily · 45 s <span>·</span> Evening: every other day · 30 s</div>
+            </div>
+            <div class="zone-row">
+              <div class="zone-top"><span class="zone-name">Windowsill</span><span class="zone-state active-zone">Active</span></div>
+              <div class="zone-info">Morning: sensor-based · 35 s <span>·</span> Evening: disabled</div>
+            </div>
+            <div class="zone-row inactive-zone">
+              <div class="zone-top"><span class="zone-name">Seedlings</span><span class="zone-state">Disabled</span></div>
+              <div class="zone-info">Morning: disabled <span>·</span> Evening: disabled</div>
+            </div>
+          </div>
+
+          <div class="section-label manual-label"><span>Manual watering</span><span>Select a zone</span></div>
+          <div class="watering-select-row">
+            <select class="watering-select" id="manual-zone" aria-label="Manual watering zone">
+              <option value="stop">Stop</option>
+              <option value="tomatoes">Tomatoes</option>
+              <option value="windowsill">Windowsill</option>
+              <option value="seedlings">Seedlings</option>
+            </select>
+            <button class="execute-btn" id="manual-execute" type="button" disabled>
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+              <span>Start</span>
+            </button>
+          </div>
+          <div class="manual-hint" id="manual-hint" aria-live="polite">Select a zone for manual watering.</div>
+        </div>
+      </section>
+    </article>
+    <section class="yaml-builder" aria-label="Generated Orry card YAML">
+      <div class="yaml-builder-header">
+        <h2 class="yaml-builder-title">Lovelace YAML</h2>
+        <span class="yaml-builder-status" id="yaml-status" aria-live="polite">Paste this as a standalone card.</span>
+      </div>
+      <textarea class="yaml-output" id="yaml-output" readonly spellcheck="false" aria-label="Generated YAML"></textarea>
+      <div class="yaml-builder-actions">
+        <button class="yaml-copy" id="yaml-copy" type="button">Copy YAML</button>
+      </div>
+    </section>
+  </main>
+  <script>
+    document.querySelectorAll('.tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach((item) => item.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach((panel) => panel.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelector(`#panel-${tab.dataset.tab}`)?.classList.add('active');
+      });
+    });
+
+    const autoToggle = document.getElementById('auto-toggle');
+    const skipToggle = document.getElementById('skip-toggle');
+    const autoStatus = document.getElementById('auto-status');
+    const skipStatus = document.getElementById('skip-status');
+    const wateringStatus = document.getElementById('watering-status');
+    const wateringKpiButton = document.getElementById('watering-kpi-button');
+    const wateringNextEvent = document.getElementById('watering-next-event');
+    const wateringNextEventText = wateringNextEvent.querySelector('.kpi-next-event-copy:not(.kpi-next-event-clone)');
+    const manualZone = document.getElementById('manual-zone');
+    const manualExecute = document.getElementById('manual-execute');
+    const manualHint = document.getElementById('manual-hint');
+    let manualRunning = false;
+
+    const playIcon = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><span>Start</span>';
+    const stopIcon = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg><span>Stop</span>';
+
+    function updateWateringMiniEvent(text) {
+      wateringNextEventText.textContent = text;
+      wateringNextEvent.setAttribute('title', text);
+      wateringNextEvent.setAttribute('aria-label', text);
+      wateringNextEvent.dispatchEvent(new Event('watering-event-updated'));
+    }
+
+    function updateWateringDemo() {
+      const autoOn = autoToggle.classList.contains('is-on');
+      const skipNext = skipToggle.classList.contains('is-on');
+      const selectedName = manualZone.options[manualZone.selectedIndex].text;
+
+      autoStatus.textContent = autoOn ? 'On' : 'Off';
+      skipStatus.textContent = skipNext ? 'The next cycle will be skipped' : 'Not scheduled';
+      manualZone.disabled = manualRunning;
+      manualExecute.disabled = !manualRunning && manualZone.value === 'stop';
+      manualExecute.classList.toggle('is-stop', manualRunning);
+      manualExecute.innerHTML = manualRunning ? stopIcon : playIcon;
+      manualExecute.setAttribute('aria-label', manualRunning ? 'Stop manual watering' : 'Start manual watering');
+
+      wateringKpiButton.classList.toggle('is-on', autoOn);
+      wateringKpiButton.classList.toggle('is-off', !autoOn);
+      const toggleLabel = autoOn ? 'Turn auto watering off' : 'Turn auto watering on';
+      wateringKpiButton.setAttribute('aria-pressed', String(autoOn));
+      wateringKpiButton.setAttribute('aria-label', toggleLabel);
+      wateringKpiButton.setAttribute('title', toggleLabel);
+
+      if (manualRunning) {
+        wateringStatus.textContent = `Manual watering: ${selectedName}`;
+        updateWateringMiniEvent(`Manual watering zone “${selectedName}” is running`);
+        manualHint.textContent = `Manual watering zone “${selectedName}” is running. Press “Stop”.`;
+        return;
+      }
+
+      if (!autoOn) {
+        wateringStatus.textContent = 'Auto watering is off';
+        updateWateringMiniEvent('No watering is scheduled because auto watering is off');
+      } else if (skipNext) {
+        wateringStatus.textContent = 'The next cycle will be skipped';
+        updateWateringMiniEvent('The next watering cycle at 20:00 today will be skipped');
+      } else {
+        wateringStatus.textContent = 'Next cycle at 20:00';
+        updateWateringMiniEvent('Next scheduled watering is today at 20:00');
+      }
+
+      manualHint.textContent = manualZone.value === 'stop'
+        ? 'Select a zone for manual watering.'
+        : `Zone “${selectedName}” selected. Press “Start” to begin watering.`;
+    }
+
+    function setToggle(button, enabled) {
+      button.classList.toggle('is-on', enabled);
+      button.setAttribute('aria-pressed', String(enabled));
+      updateWateringDemo();
+    }
+
+    autoToggle.addEventListener('click', () => setToggle(autoToggle, !autoToggle.classList.contains('is-on')));
+    skipToggle.addEventListener('click', () => setToggle(skipToggle, !skipToggle.classList.contains('is-on')));
+    manualZone.addEventListener('change', updateWateringDemo);
+    wateringKpiButton.addEventListener('click', () => setToggle(autoToggle, !autoToggle.classList.contains('is-on')));
+    manualExecute.addEventListener('click', () => {
+      if (manualRunning) {
+        manualRunning = false;
+      } else if (manualZone.value !== 'stop') {
+        manualRunning = true;
+      }
+      updateWateringDemo();
+    });
+    updateWateringDemo();
+  </script>
+  <script>
+    (() => {
+      const demoDrives = [
+        { name: "Standalone left blinds", position: 100, battery: 86, sun: true, work: true },
+        { name: "Facade left blinds", position: 75, battery: 39, sun: true, work: true },
+        { name: "Facade right blinds", position: 50, battery: 28, sun: false, work: true },
+        { name: "Facade center-left blinds", position: 25, battery: 12, sun: true, work: true },
+        { name: "Facade center-right blinds", position: 0, battery: 45, sun: true, work: false },
+      ];
+
+      const driveList = document.getElementById("drive-list");
+      const template = document.getElementById("drive-row-template");
+      const cardModeInput = document.getElementById("card-mode");
+      const cardPreview = document.getElementById("card-preview");
+      const scrollTextInput = document.getElementById("scroll-text");
+      const cardSubtitle = document.getElementById("card-subtitle");
+      const cardSubtitleText = document.getElementById("card-subtitle-text");
+      const cardSubtitleClone = document.getElementById("card-subtitle-clone");
+      const blindsKpiMain = document.getElementById("blinds-kpi-main");
+      const blindsKpiCounts = document.getElementById("blinds-kpi-counts");
+      const blindsDeviceCount = document.getElementById("blinds-device-count");
+      const blindsActiveCount = document.getElementById("blinds-active-count");
+      const blindsErrorCount = document.getElementById("blinds-error-count");
+      const blindsSummaryRangeInput = document.getElementById("blinds-summary-range-input");
+      const blindsSummaryRangeFill = document.getElementById("blinds-summary-range-fill");
+      const blindsSummaryRangeThumb = document.getElementById("blinds-summary-range-thumb");
+      const lightingKpiSub = document.getElementById("lighting-kpi-sub");
+      const indicatorMode = document.getElementById("drive-indicator-mode");
+      const showPositionPercent = document.getElementById("drive-show-position-percent");
+      const themeToggle = document.getElementById("theme-toggle");
+      const themeName = document.getElementById("theme-name");
+      const switchIconInput = document.getElementById("switch-icon-name");
+      const lightingPillToggle = document.getElementById("lighting-pill-toggle");
+      const entityInput = document.getElementById("card-entity");
+      const defaultTabInput = document.getElementById("card-default-tab");
+      const titleInput = document.getElementById("card-title-input");
+      const titlePreview = document.getElementById("card-title");
+      const yamlOutput = document.getElementById("yaml-output");
+      const yamlStatus = document.getElementById("yaml-status");
+      const copyYamlButton = document.getElementById("yaml-copy");
+      const lightingPanelSummary = document.getElementById("lighting-panel-summary");
+      const lightingKpiButton = document.getElementById("lighting-kpi-button");
+      const blindsNextEvent = document.getElementById("blinds-next-event");
+      const lightingNextEvent = document.getElementById("lighting-next-event");
+      const wateringNextEvent = document.getElementById("watering-next-event");
+      const lightingNextEventText = lightingNextEvent.querySelector(".kpi-next-event-copy:not(.kpi-next-event-clone)");
+      let lightingOn = true;
+
+      function setTheme(isDark) {
+        document.body.dataset.theme = isDark ? "dark" : "light";
+        themeToggle.setAttribute("aria-checked", String(isDark));
+        themeToggle.setAttribute("aria-label", isDark ? "Switch to light theme" : "Switch to dark theme");
+        themeName.textContent = isDark ? "Dark" : "Light";
+      }
+
+      themeToggle.addEventListener("click", () => {
+        setTheme(themeToggle.getAttribute("aria-checked") !== "true");
+      });
+      setTheme(false);
+
+      const switchIconPaths = {
+        power: '<path d="M12 2v10"/><path d="M6.2 5.8a8 8 0 1 0 11.6 0"/>',
+        lightbulb: '<path d="M12 2a7 7 0 0 0-4 12.74V17h8v-2.26A7 7 0 0 0 12 2Z"/><path d="M9 21h6M10 18h4"/>',
+        water: '<path d="M12 2.5C10 5.7 6 10.3 6 14a6 6 0 0 0 12 0c0-3.7-4-8.3-6-11.5Z"/>',
+        pause: '<path d="M8 5v14M16 5v14"/>',
+        fallback: '<circle cx="12" cy="12" r="8"/><path d="M12 7v10m-3-7 3-3 3 3"/>',
+      };
+
+      // These use the same outlines as the five custom icons orry:blind-0/25/50/75/100.
+      const blindStateIconPaths = {
+        0: "M4.00 3.00L20.00 3.00L20.00 19.00L22.00 19.00L22.00 21.00L2.00 21.00L2.00 19.00L4.00 19.00ZM6.00 5.00L6.00 19.00L18.00 19.00L18.00 5.00L16.70 5.00L16.70 17.80L7.30 17.80L7.30 5.00Z",
+        25: "M4.00 3.00L20.00 3.00L20.00 19.00L22.00 19.00L22.00 21.00L2.00 21.00L2.00 19.00L4.00 19.00ZM6.00 5.00L6.00 19.00L18.00 19.00L18.00 5.00L16.70 5.00L16.70 15.50L7.30 15.50L7.30 5.00Z",
+        50: "M4.00 3.00L20.00 3.00L20.00 19.00L22.00 19.00L22.00 21.00L2.00 21.00L2.00 19.00L4.00 19.00ZM6.00 5.00L6.00 19.00L18.00 19.00L18.00 5.00L16.70 5.00L16.70 13.00L7.30 13.00L7.30 5.00Z",
+        75: "M4.00 3.00L20.00 3.00L20.00 19.00L22.00 19.00L22.00 21.00L2.00 21.00L2.00 19.00L4.00 19.00ZM6.00 5.00L6.00 19.00L18.00 19.00L18.00 5.00L16.70 5.00L16.70 9.20L7.30 9.20L7.30 5.00Z",
+        100: "M4.00 3.00L20.00 3.00L20.00 19.00L22.00 19.00L22.00 21.00L2.00 21.00L2.00 19.00L4.00 19.00ZM6.00 5.00L6.00 19.00L18.00 19.00L18.00 5.00Z",
+      };
+
+      function iconPath(iconName) {
+        const name = iconName.toLowerCase().split(":").pop() || "";
+        if (/power|switch|toggle/.test(name)) return switchIconPaths.power;
+        if (/lightbulb|bulb|lamp/.test(name)) return switchIconPaths.lightbulb;
+        if (/pause|stop|skip/.test(name)) return switchIconPaths.pause;
+        if (/water|watering|drop/.test(name)) return switchIconPaths.water;
+        return switchIconPaths.fallback;
+      }
+
+      function updateSwitchIcons() {
+        const iconName = switchIconInput.value.trim();
+        document.querySelectorAll("[data-switch-control]").forEach((button) => {
+          button.classList.toggle("icon-mode", Boolean(iconName));
+          button.replaceChildren();
+          if (iconName) {
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.setAttribute("viewBox", "0 0 24 24");
+            svg.setAttribute("fill", "none");
+            svg.setAttribute("stroke", "currentColor");
+            svg.setAttribute("stroke-width", "2");
+            svg.setAttribute("stroke-linecap", "round");
+            svg.setAttribute("stroke-linejoin", "round");
+            svg.setAttribute("aria-hidden", "true");
+            svg.innerHTML = iconPath(iconName);
+            button.appendChild(svg);
+            button.setAttribute("title", iconName);
+          } else {
+            button.removeAttribute("title");
+          }
+        });
+      }
+
+      function yamlQuote(value) {
+        const normalized = String(value ?? "").replace(/[\r\n]+/g, " ").trim();
+        return `'${normalized.replace(/'/g, "''")}'`;
+      }
+
+      function updateSubtitleOverflow() {
+        const text = cardSubtitleText.textContent;
+        cardSubtitle.setAttribute("title", text);
+        const textWidth = cardSubtitleText.getBoundingClientRect().width;
+        const shouldScroll = textWidth > cardSubtitle.clientWidth + 1;
+        cardSubtitle.classList.toggle("is-scrolling", shouldScroll);
+        if (!shouldScroll) {
+          cardSubtitleClone.textContent = "";
+          cardSubtitle.style.removeProperty("--subtitle-distance");
+          cardSubtitle.style.removeProperty("--subtitle-duration");
+          return;
+        }
+        const gap = 28;
+        const distance = textWidth + gap;
+        cardSubtitleClone.textContent = text;
+        cardSubtitle.style.setProperty("--subtitle-distance", `${-distance}px`);
+        cardSubtitle.style.setProperty("--subtitle-duration", `${Math.max(8, distance / 30)}s`);
+      }
+
+      function updateEventOverflow() {
+        for (const event of [blindsNextEvent, lightingNextEvent, wateringNextEvent]) {
+          const textElement = event.querySelector(".kpi-next-event-copy:not(.kpi-next-event-clone)");
+          const clone = event.querySelector(".kpi-next-event-clone");
+          const text = textElement.textContent;
+          const textWidth = textElement.scrollWidth;
+          const shouldScroll = scrollTextInput.checked && textWidth > event.clientWidth + 1;
+          event.setAttribute("title", text);
+          event.setAttribute("aria-label", text);
+          event.classList.toggle("is-scrolling", shouldScroll);
+          if (!shouldScroll) {
+            clone.textContent = "";
+            event.style.removeProperty("--event-distance");
+            event.style.removeProperty("--event-duration");
+            continue;
+          }
+          const gap = 28;
+          const distance = textWidth + gap;
+          clone.textContent = text;
+          event.style.setProperty("--event-distance", `${-distance}px`);
+          event.style.setProperty("--event-duration", `${Math.max(8, distance / 30)}s`);
+        }
+      }
+
+      function getActiveBlindRows() {
+        return [...driveList.querySelectorAll(".drive-row")].filter((row) =>
+          row.querySelector('[data-kind="work"]').checked
+        );
+      }
+
+      function getAverageBlindPosition() {
+        const positions = getActiveBlindRows()
+          .map((row) => Number(row.dataset.position))
+          .filter(Number.isFinite);
+        if (!positions.length) return 0;
+        return Math.round(positions.reduce((sum, position) => sum + position, 0) / positions.length);
+      }
+
+      function syncBlindPositionIndicators(position = getAverageBlindPosition()) {
+        const value = Math.max(0, Math.min(100, Math.round(Number(position) || 0)));
+        blindsKpiMain.textContent = `${value}%`;
+        blindsKpiMain.setAttribute("aria-label", `Average active blind position: ${value}%`);
+        blindsKpiMain.setAttribute("title", `Average active blind position: ${value}%`);
+        blindsSummaryRangeInput.value = String(value);
+        blindsSummaryRangeInput.setAttribute("aria-valuetext", `${value}%`);
+        blindsSummaryRangeInput.setAttribute("title", `Average active blind position: ${value}%`);
+        blindsSummaryRangeFill.style.width = `${value}%`;
+        blindsSummaryRangeThumb.style.left = `${value}%`;
+      }
+
+      function updateModePreview() {
+        const isSummary = cardModeInput.value === "summary";
+        cardPreview.classList.toggle("summary-mode", isSummary);
+        cardPreview.setAttribute(
+          "aria-label",
+          isSummary ? "Orry summary card preview" : "Full Orry card preview"
+        );
+        cardSubtitleText.textContent = "Lighting off · 07:10";
+        updateSubtitleOverflow();
+        updateEventOverflow();
+        syncBlindPositionIndicators();
+        updateBlindsKpiCounts();
+        updateLightingKpiCount();
+      }
+
+      function updateBlindsKpiCounts() {
+        const allRows = [...driveList.querySelectorAll(".drive-row")];
+        const activeRows = getActiveBlindRows();
+        const errorCount = allRows.filter((row) => row.dataset.error === "true").length;
+        const accessibleText = `${allRows.length} devices, ${activeRows.length} active blinds, ${errorCount} errors`;
+        blindsDeviceCount.textContent = String(allRows.length);
+        blindsActiveCount.textContent = String(activeRows.length);
+        blindsErrorCount.textContent = String(errorCount);
+        blindsKpiCounts.setAttribute("aria-label", accessibleText);
+        blindsSummaryRangeInput.disabled = activeRows.length === 0;
+      }
+
+      function updateYamlBuilder() {
+        const mode = cardModeInput.value;
+        const entity = entityInput.value.trim();
+        const tab = defaultTabInput.value;
+        const title = titleInput.value.trim();
+        const switchIcon = switchIconInput.value.trim();
+        const validSwitchIcon = !switchIcon || /^[a-z0-9_-]+:[a-z0-9_/-]+$/i.test(switchIcon);
+        const driveIndicator = indicatorMode.value;
+        const showPercent = showPositionPercent.checked;
+        const scrollText = scrollTextInput.checked;
+        titlePreview.textContent = title || "Orangery";
+        updateModePreview();
+        const lines = [
+          "type: custom:orry-card",
+          `mode: ${mode}`,
+          `entity: ${yamlQuote(entity)}`,
+        ];
+        if (mode === "full") {
+          lines.push(
+            `default_tab: ${tab}`,
+            `drive_indicator: ${driveIndicator}`,
+            `show_position_percent: ${showPercent ? "true" : "false"}`,
+          );
+        }
+        if (title) lines.push(`title: ${yamlQuote(title)}`);
+        if (scrollText) lines.push("scroll_text: true");
+        if (switchIcon && validSwitchIcon) lines.push(`switch_icon: ${switchIcon}`);
+        yamlOutput.value = lines.join("\n");
+
+        const validEntity = /^sensor\.[a-z0-9_]+$/i.test(entity);
+        yamlStatus.textContent = !validEntity
+          ? "Enter a valid sensor ID, such as sensor.name."
+          : !validSwitchIcon
+            ? "Enter an icon ID such as mdi:power, or leave the field blank."
+            : "YAML is ready to copy.";
+        yamlStatus.style.color = validEntity && validSwitchIcon ? "" : "#ff9f7a";
+      }
+
+      function updateLightingKpiCount() {
+        const activeCount = lightingOn ? 2 : 0;
+        const accessibleText = `Total devices: 2, on: ${activeCount}`;
+        lightingKpiSub.textContent = `2 / ${activeCount}`;
+        lightingKpiSub.setAttribute("aria-label", accessibleText);
+        lightingKpiSub.setAttribute("title", accessibleText);
+      }
+
+      function setLightingState(isOn) {
+        lightingOn = isOn;
+        lightingPillToggle.classList.toggle("is-on", isOn);
+        lightingPillToggle.setAttribute("aria-pressed", String(isOn));
+        const entityIcon = document.getElementById("entity-icon-preview");
+        entityIcon.classList.toggle("is-on", isOn);
+        entityIcon.classList.toggle("is-off", !isOn);
+        const stateLabel = isOn ? "On" : "Off";
+        lightingPanelSummary.textContent = `${stateLabel} · 1 device`;
+        updateLightingKpiCount();
+        lightingKpiButton.classList.toggle("is-on", isOn);
+        lightingKpiButton.classList.toggle("is-off", !isOn);
+        const toggleLabel = isOn ? "Turn lighting off" : "Turn lighting on";
+        lightingKpiButton.setAttribute("aria-pressed", String(isOn));
+        lightingKpiButton.setAttribute("aria-label", toggleLabel);
+        lightingKpiButton.setAttribute("title", toggleLabel);
+        const nextEventText = isOn
+          ? "Plant lighting will turn off automatically today at 21:00"
+          : "Plant lighting will turn on automatically tomorrow at 08:00";
+        lightingNextEventText.textContent = nextEventText;
+        updateEventOverflow();
+      }
+
+      cardModeInput.addEventListener("change", updateYamlBuilder);
+      scrollTextInput.addEventListener("change", updateYamlBuilder);
+      switchIconInput.addEventListener("input", () => {
+        updateSwitchIcons();
+        updateYamlBuilder();
+      });
+      entityInput.addEventListener("input", updateYamlBuilder);
+      titleInput.addEventListener("input", updateYamlBuilder);
+      defaultTabInput.addEventListener("change", () => {
+        document.querySelector(`.tab[data-tab="${defaultTabInput.value}"]`)?.click();
+        updateYamlBuilder();
+      });
+      copyYamlButton.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(yamlOutput.value);
+          yamlStatus.textContent = "YAML copied.";
+        } catch {
+          yamlOutput.focus();
+          yamlOutput.select();
+          const copied = document.execCommand("copy");
+          yamlStatus.textContent = copied ? "YAML copied." : "Select the code and copy it manually.";
+        }
+      });
+      lightingPillToggle.addEventListener("click", () => setLightingState(!lightingOn));
+      lightingKpiButton.addEventListener("click", () => setLightingState(!lightingOn));
+      wateringNextEvent.addEventListener("watering-event-updated", updateEventOverflow);
+      if (typeof ResizeObserver !== "undefined") {
+        const textOverflowObserver = new ResizeObserver(() => {
+          updateSubtitleOverflow();
+          updateEventOverflow();
+        });
+        textOverflowObserver.observe(cardSubtitle);
+        textOverflowObserver.observe(blindsNextEvent);
+        textOverflowObserver.observe(lightingNextEvent);
+        textOverflowObserver.observe(wateringNextEvent);
+      } else {
+        window.addEventListener("resize", () => {
+          updateSubtitleOverflow();
+          updateEventOverflow();
+        });
+      }
+      updateSwitchIcons();
+      updateYamlBuilder();
+      setLightingState(true);
+
+      for (const drive of demoDrives) {
+        const fragment = template.content.cloneNode(true);
+        const row = fragment.querySelector(".drive-row");
+        row.dataset.position = String(drive.position);
+        row.dataset.battery = String(drive.battery);
+        row.classList.toggle("is-disabled", !drive.work);
+        row.querySelector(".drive-name").textContent = drive.name;
+        row.querySelector(".drive-position-value").textContent = `${drive.position}%`;
+        row.querySelector(".drive-blind-icon").setAttribute("aria-label", `${drive.name}: position ${drive.position}%`);
+
+        const sun = row.querySelector('[data-kind="sun"]');
+        sun.checked = drive.sun;
+        sun.setAttribute("aria-label", `${drive.name}: sun protection`);
+        const work = row.querySelector('[data-kind="work"]');
+        work.checked = drive.work;
+        work.setAttribute("aria-label", `${drive.name}: included in automation`);
+        work.addEventListener("change", () => {
+          row.classList.toggle("is-disabled", !work.checked);
+          renderDriveRows();
+          syncBlindPositionIndicators();
+          updateBlindsKpiCounts();
+        });
+        driveList.appendChild(fragment);
+      }
+
+      function batteryColor(value) {
+        if (value >= 45) return "drive-battery-green";
+        if (value >= 35) return "drive-battery-yellow";
+        if (value >= 15) return "drive-battery-orange";
+        return "drive-battery-red";
+      }
+
+      function renderDriveRows() {
+        const mode = indicatorMode.value;
+        for (const row of driveList.querySelectorAll(".drive-row")) {
+          const position = Number(row.dataset.position);
+          const battery = Number(row.dataset.battery);
+          const value = row.querySelector(".drive-position-value");
+          const track = row.querySelector(".drive-track");
+          const fill = row.querySelector(".drive-fill");
+          const driveIcon = row.querySelector(".drive-state-icon");
+          const iconPosition = Math.max(0, Math.min(100, Math.round(position / 25) * 25));
+
+          driveIcon.dataset.icon = `orry:blind-${iconPosition}`;
+          driveIcon.innerHTML = `<path d="${blindStateIconPaths[iconPosition]}"/>`;
+          row.querySelector(".drive-blind-icon").setAttribute(
+            "aria-label",
+            `${row.querySelector(".drive-name").textContent}: position ${position}%`
+          );
+          value.hidden = !showPositionPercent.checked;
+
+          if (mode === "position") {
+            track.hidden = false;
+            fill.className = "drive-fill drive-position-fill";
+            fill.style.width = `${position}%`;
+          } else if (mode === "battery") {
+            track.hidden = false;
+            fill.className = `drive-fill ${batteryColor(battery)}`;
+            fill.style.width = `${battery}%`;
+          } else {
+            track.hidden = true;
+          }
+        }
+      }
+
+      indicatorMode.addEventListener("change", () => {
+        renderDriveRows();
+        updateYamlBuilder();
+      });
+      showPositionPercent.addEventListener("change", () => {
+        renderDriveRows();
+        updateYamlBuilder();
+      });
+      renderDriveRows();
+      syncBlindPositionIndicators();
+      updateBlindsKpiCounts();
+      blindsSummaryRangeInput.addEventListener("input", () => {
+        const position = Math.max(0, Math.min(100, Math.round(Number(blindsSummaryRangeInput.value) || 0)));
+        for (const row of getActiveBlindRows()) {
+          row.dataset.position = String(position);
+          row.querySelector(".drive-position-value").textContent = `${position}%`;
+          row.querySelector(".drive-blind-icon").setAttribute("aria-label", `${row.querySelector(".drive-name").textContent}: position ${position}%`);
+        }
+        renderDriveRows();
+        syncBlindPositionIndicators(position);
+        updateBlindsKpiCounts();
+      });
+    })();
+  </script>
+</body>
+</html>

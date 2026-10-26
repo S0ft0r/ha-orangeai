@@ -1,97 +1,324 @@
 name: Release
-run-name: Release ${{ github.event.inputs.tag || github.ref_name }}
+run-name: Auto-release after Validate — ${{ github.event.workflow_run.head_branch }}
 
 on:
-  push:
-    tags:
-      - "v*"
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: "Тег релиза (например, v0.1.26)"
-        required: true
-        default: "v0.1.26"
-      prerelease:
-        description: "Отметить как Pre-release (альфа/бета)"
-        type: boolean
-        default: false
+  workflow_run:
+    workflows:
+      - Validate
+    types:
+      - completed
+    branches:
+      - main
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: orry-auto-release-main
+  cancel-in-progress: false
 
 jobs:
   release:
-    name: Build & Publish Release Archive
+    name: Publish after successful validation
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      actions: read
+      contents: write
     steps:
-      - name: Checkout repository
+      - name: Check out the validated commit
         uses: actions/checkout@v5
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
 
-      - name: Validate integration before packaging
-        run: python3 scripts/validate.py
+      - name: Verify all required Validate jobs passed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+
+          run = json.loads(
+              subprocess.check_output(
+                  ["gh", "run", "view", os.environ["RUN_ID"], "--json", "conclusion,jobs"],
+                  text=True,
+              )
+          )
+          if run.get("conclusion") != "success":
+              raise SystemExit(f"Validate conclusion is {run.get('conclusion')!r}, not success.")
+
+          required = {
+              "Local Validator & Syntax Check",
+              "Hassfest Validation",
+              "HACS Validation",
+          }
+          job_results = {job.get("name"): job.get("conclusion") for job in run.get("jobs", [])}
+          failed = {name: job_results.get(name) for name in required if job_results.get(name) != "success"}
+          if failed:
+              raise SystemExit(f"Required Validate jobs did not all pass: {failed}")
+          print("All required validation jobs passed:", ", ".join(sorted(required)))
+          PY
+
+      - name: Detect an unreleased manifest version and verify changelogs
+        id: candidate
+        env:
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          python3 - <<'PY'
+          from __future__ import annotations
+
+          from functools import cmp_to_key
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import subprocess
+          import sys
+
+          VERSION_RE = re.compile(
+              r"^(?P<numbers>\d+(?:\.\d+){2,3})(?:-(?P<pre>[0-9A-Za-z][0-9A-Za-z.-]*))?$"
+          )
+
+          def parse_version(value: str):
+              match = VERSION_RE.fullmatch(value)
+              if not match:
+                  return None
+              numbers = tuple(int(part) for part in match.group("numbers").split("."))
+              numbers = numbers + (0,) * (4 - len(numbers))
+              return numbers, match.group("pre")
+
+          def compare_prerelease(left: str, right: str) -> int:
+              def parts(value: str):
+                  return [
+                      (0, int(part)) if part.isdigit() else (1, part.lower())
+                      for part in re.split(r"[.-]", value)
+                  ]
+
+              left_parts = parts(left)
+              right_parts = parts(right)
+              for left_part, right_part in zip(left_parts, right_parts):
+                  if left_part == right_part:
+                      continue
+                  if left_part[0] != right_part[0]:
+                      return -1 if left_part[0] == 0 else 1
+                  return (left_part[1] > right_part[1]) - (left_part[1] < right_part[1])
+              return (len(left_parts) > len(right_parts)) - (len(left_parts) < len(right_parts))
+
+          def compare_versions(left: str, right: str) -> int:
+              left_parsed = parse_version(left)
+              right_parsed = parse_version(right)
+              if left_parsed is None or right_parsed is None:
+                  raise ValueError(f"Unsupported version format: {left!r} or {right!r}")
+              left_numbers, left_pre = left_parsed
+              right_numbers, right_pre = right_parsed
+              if left_numbers != right_numbers:
+                  return (left_numbers > right_numbers) - (left_numbers < right_numbers)
+              if left_pre == right_pre:
+                  return 0
+              if left_pre is None:
+                  return 1
+              if right_pre is None:
+                  return -1
+              return compare_prerelease(left_pre, right_pre)
+
+          def set_output(name: str, value: str) -> None:
+              with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+                  output.write(f"{name}={value}\n")
+
+          current_version = str(
+              json.loads(
+                  Path("custom_components/orry/manifest.json").read_text(encoding="utf-8")
+              ).get("version", "")
+          ).strip()
+          if parse_version(current_version) is None:
+              raise SystemExit(f"Unsupported manifest version: {current_version!r}")
+
+          tags = subprocess.check_output(["git", "tag", "--list", "v*"], text=True).splitlines()
+          if f"v{current_version}" in tags:
+              print(f"v{current_version} already exists; no release will be created.")
+              set_output("release", "false")
+              sys.exit(0)
+
+          tagged_versions = [
+              tag[1:]
+              for tag in tags
+              if tag.startswith("v") and parse_version(tag[1:]) is not None
+          ]
+          if tagged_versions:
+              latest_released_version = max(tagged_versions, key=cmp_to_key(compare_versions))
+              is_candidate = compare_versions(current_version, latest_released_version) > 0
+              print(
+                  f"Manifest version: {current_version}; latest release tag: "
+                  f"v{latest_released_version}."
+              )
+          else:
+              target_sha = os.environ["TARGET_SHA"]
+              try:
+                  previous_sha = subprocess.check_output(
+                      ["git", "rev-parse", f"{target_sha}^"], text=True
+                  ).strip()
+                  old_manifest = subprocess.check_output(
+                      ["git", "show", f"{previous_sha}:custom_components/orry/manifest.json"],
+                      text=True,
+                  )
+              except subprocess.CalledProcessError:
+                  print("No previous release tag or manifest is available; skipping auto-release.")
+                  set_output("release", "false")
+                  sys.exit(0)
+              previous_version = str(json.loads(old_manifest).get("version", "")).strip()
+              if parse_version(previous_version) is None:
+                  raise SystemExit(f"Unsupported previous manifest version: {previous_version!r}")
+              is_candidate = compare_versions(current_version, previous_version) > 0
+              print(f"Manifest version: {current_version}; previous version: {previous_version}.")
+
+          if not is_candidate:
+              print("The manifest does not contain an unreleased version bump; skipping release.")
+              set_output("release", "false")
+              sys.exit(0)
+
+          for changelog_name in ("CHANGELOG.md", "CHANGELOG.en.md"):
+              changelog = Path(changelog_name).read_text(encoding="utf-8")
+              heading = re.compile(
+                  rf"^## \[{re.escape(current_version)}\]\s+—\s+.+$",
+                  flags=re.MULTILINE,
+              )
+              if not heading.search(changelog):
+                  raise SystemExit(
+                      f"{changelog_name} has no release heading for {current_version}."
+                  )
+
+          set_output("version", current_version)
+          set_output("release", "true")
+          print(f"Validated {current_version} is eligible for automatic release.")
+          PY
+
+      - name: Wait five minutes and confirm main is still the tested commit
+        id: stability
+        if: steps.candidate.outputs.release == 'true'
+        env:
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          sleep 300
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          MAIN_SHA="$(git rev-parse refs/remotes/origin/main)"
+          if [[ "$MAIN_SHA" != "$TARGET_SHA" ]]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::main advanced during the release delay; this run will not publish. The new main commit must pass Validate first."
+            exit 0
+          fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          echo "main still points to the validated commit $TARGET_SHA."
+
+      - name: Confirm the release tag does not exist
+        id: tag
+        if: steps.stability.outputs.ready == 'true'
+        env:
+          VERSION: ${{ steps.candidate.outputs.version }}
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}"
+          REMOTE_TAGS="$(git ls-remote --tags origin "refs/tags/${TAG}")"
+          if [[ -n "$REMOTE_TAGS" ]]; then
+            echo "::error::Release tag ${TAG} already exists; refusing to overwrite it."
+            exit 1
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Build orry.zip archive
+        if: steps.stability.outputs.ready == 'true' && steps.tag.outputs.tag != ''
         run: |
           cd custom_components
           zip -r ../orry.zip orry -x "*/__pycache__/*" "*.pyc" "*.pyo"
 
-      - name: Extract latest release notes from CHANGELOG.md & CHANGELOG.en.md
+      - name: Extract release notes for the validated version
+        if: steps.stability.outputs.ready == 'true' && steps.tag.outputs.tag != ''
         env:
+          VERSION: ${{ steps.candidate.outputs.version }}
           REPO: ${{ github.repository }}
         run: |
-          python3 - <<'EOF'
+          python3 - <<'PY'
           import os
           from pathlib import Path
           import re
 
-          repo = os.environ.get("REPO", "S0ft0r/ha-orangeai")
-          pattern = r"(^## \[.*?)(?=^---|\Z|^## \[)"
+          version = os.environ["VERSION"]
+          repo = os.environ["REPO"]
 
-          ru_text = Path("CHANGELOG.md").read_text(encoding="utf-8")
-          ru_match = re.search(pattern, ru_text, flags=re.MULTILINE | re.DOTALL)
-          ru_notes = ru_match.group(1).strip() if ru_match else "Автоматическая сборка релиза."
+          def extract_entry(path: str) -> str:
+              lines = Path(path).read_text(encoding="utf-8").splitlines()
+              heading = re.compile(rf"^## \[{re.escape(version)}\](?:\s|$)")
+              start = next((i for i, line in enumerate(lines) if heading.match(line)), None)
+              if start is None:
+                  raise SystemExit(f"{path} has no entry for {version}.")
+              end = len(lines)
+              for i in range(start + 1, len(lines)):
+                  if lines[i].startswith("---") or lines[i].startswith("## ["):
+                      end = i
+                      break
+              return "\n".join(lines[start:end]).strip()
 
-          en_notes = ""
-          en_path = Path("CHANGELOG.en.md")
-          if en_path.is_file():
-              en_text = en_path.read_text(encoding="utf-8")
-              en_match = re.search(pattern, en_text, flags=re.MULTILINE | re.DOTALL)
-              if en_match:
-                  en_notes = en_match.group(1).strip()
-
+          russian_notes = extract_entry("CHANGELOG.md")
+          english_notes = extract_entry("CHANGELOG.en.md")
           header = (
-              f"🌐 **Language:** **🇷🇺 Русский** | "
+              "🌐 **Language:** **🇷🇺 Русский** | "
               f"[🇬🇧 Full English changelog (CHANGELOG.en.md)](https://github.com/{repo}/blob/main/CHANGELOG.en.md)\n"
-              f"*(🇬🇧 English version below)*\n\n"
+              "*(🇬🇧 English version below)*\n\n"
           )
-          body = header + ru_notes
-          if en_notes:
-              body += f"\n\n---\n\n🇬🇧 **English**\n\n{en_notes}"
+          body = (
+              header
+              + russian_notes
+              + "\n\n---\n\n🇬🇧 **English**\n\n"
+              + english_notes
+          )
           Path("release_notes.md").write_text(body + "\n", encoding="utf-8")
-          EOF
+          PY
 
-      - name: Create or Update GitHub Release
+      - name: Final check of main and release-tag state
+        id: final-check
+        if: steps.stability.outputs.ready == 'true' && steps.tag.outputs.tag != ''
+        env:
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          MAIN_SHA="$(git rev-parse refs/remotes/origin/main)"
+          if [[ "$MAIN_SHA" != "$TARGET_SHA" ]]; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::main advanced before publishing; this release was cancelled."
+            exit 0
+          fi
+          REMOTE_TAGS="$(git ls-remote --tags origin "refs/tags/${TAG}")"
+          if [[ -n "$REMOTE_TAGS" ]]; then
+            echo "::error::Release tag ${TAG} appeared before publishing; refusing to overwrite it."
+            exit 1
+          fi
+          echo "publish=true" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub Release
+        if: steps.final-check.outputs.publish == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.event.inputs.tag || github.ref_name }}
-          IS_PRERELEASE: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease || contains(github.ref_name, '-') }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          VERSION: ${{ steps.candidate.outputs.version }}
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          PRERELEASE_FLAG=""
-          if [ "$IS_PRERELEASE" = "true" ]; then
-            PRERELEASE_FLAG="--prerelease"
+          set -euo pipefail
+          release_flags=()
+          if [[ "$VERSION" == *-* ]]; then
+            release_flags+=(--prerelease)
           fi
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" orry.zip --clobber
-            gh release edit "$TAG" --notes-file release_notes.md
-          else
-            gh release create "$TAG" orry.zip \
-              --target "${{ github.sha }}" \
-              --title "Домашняя оранжерея $TAG" \
-              --notes-file release_notes.md \
-              $PRERELEASE_FLAG
-          fi
+          gh release create "$TAG" orry.zip \
+            --target "$TARGET_SHA" \
+            --title "Домашняя оранжерея $TAG" \
+            --notes-file release_notes.md \
+            "${release_flags[@]}"

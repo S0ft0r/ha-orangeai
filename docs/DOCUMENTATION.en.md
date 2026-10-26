@@ -1,16 +1,16 @@
 # Home Orangery — Modular Blind, Plant Lighting & Watering Controller for Home Assistant
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![Version](https://img.shields.io/badge/version-0.1.26-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
+[![Version](https://img.shields.io/badge/version-0.1.26.1-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.8.0%2B-41BDF5.svg)](https://www.home-assistant.io/)
 [![Manufacturer](https://img.shields.io/badge/manufacturer-OrangeAI-purple.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Author](https://img.shields.io/badge/author-%40S0ft0r-orange.svg)](https://github.com/S0ft0r)
 
 🌐 **Language:** [🇷🇺 Полная документация на русском (DOCUMENTATION.md)](DOCUMENTATION.md) | **🇬🇧 English**
 
-[Short README overview](../README.en.md) · [Open the interactive Lovelace YAML builder](https://html-preview.github.io/?url=https://github.com/S0ft0r/ha-orangeai/blob/main/docs/orry-builder.html)
+[Short README overview](../README.en.md) · [Open the interactive Lovelace YAML builder](https://html-preview.github.io/?url=https://github.com/S0ft0r/ha-orangeai/blob/main/docs/orry-builder.en.html)
 
-> **Version:** 0.1.26 
+> **Version:** 0.1.26.1  
 > **Manufacturer:** `OrangeAI`  
 > **Author:** [Softor (@S0ft0r)](https://github.com/S0ft0r)
 
@@ -82,6 +82,10 @@ After installation, use the official badge to start setup, or go to **Settings �
 
 The integration includes a Home Assistant-style `custom:orry-card` with `mode: full` and `mode: summary`. Both modes share the same header, header state line, and summary tiles for the enabled **Blinds**, **Lighting**, and **Watering** modules. Tiles show live counters (blinds: total / active / errors; lighting: total / on; watering: configured / active), the blind-position slider, and available lighting and auto-watering toggles. Each tile shows its next event from the **Next** sensor attributes (`blind_action`, `light_action`, and `watering_action`); the separate “Next” pill on the right side of the header has been removed. Full mode additionally shows detailed tabs for configured lights, auto-watering, schedule information, and manual dosed watering; summary mode shows only the header and KPI tiles. Visible tiles and tabs are determined automatically by enabled modules. After the first verified integration action, the subtitle uses the **Next** sensor's `last_action` attribute (localized text with local time); until then it falls back to enabled module names. `last_action_at` contains the event's ISO timestamp. The last action survives schedule refreshes and is restored after a Home Assistant restart; builder demo history is never used. Set `scroll_text: true` to scroll overflowing event lines in the mini-cards; it defaults to `false`. The header's `last_action` subtitle still scrolls automatically when it overflows. Detailed panels—including the watering panel—are unchanged.
 
+![Example Home Orangery card with blind and lighting tiles](images/en/orry-card-overview.png)
+
+*Lovelace card overview: module status, upcoming actions, and blind and lighting controls.*
+
 The blinds tile includes a position slider for the active group and `total / active / errors` counters; there is no separate aggregate blind-control panel. In full mode, the drive list includes every configured drive, including those excluded from automation. The **Sun protection** checkbox is connected to the `blinds_for_protect` select entity, which is created when the sun-protection module is enabled and can be changed live without reloading the integration. If protection is already active, newly selected drives are closed immediately and deselected drives are opened. The **In work** checkbox updates the existing `excluded_blinds` select. Excluded rows are dimmed and hatched except for the final work-checkbox cell. The position/battery indicator uses the available row width; the numeric position can be toggled independently. Position-aware drive icons use `orry:blind-0/25/50/75/100` without blue tile backgrounds. The sun-protection and work columns use the Orry icons `orry:blind-sun` and `orry:blind-pause`. No separate “Drives” heading is shown. The card always uses the Home Assistant theme.
 
 - In Lovelace **Storage** mode the card resource is registered automatically; in YAML mode the integration loads the JS module through the frontend. Do not add the resource manually.
@@ -152,6 +156,10 @@ Disabled modules are hidden automatically: each card shows only its active KPI t
 
 After setup, the integration creates **1 main device** and up to **4 sub-devices** depending on the enabled modules. Disabling a module automatically removes its unused sub-device.
 
+![Home Orangery integration page and created Home Assistant devices](images/en/orry-integration-overview.png)
+
+*Integration page showing the main device and its sub-devices.*
+
 | # | Device Name | When Created | Controls & Sensors Inside |
 |---|---|---|---|
 | 1 | **`<Orangery Name>`** *(Main Device)* | **Always** | Module status sensors (**Next**, **Blinds**, **Lighting**, **Watering**), aggregated battery status across all devices (**Battery level**), and configurable **Low battery alert threshold** (`5–50%`, default `15%`) |
@@ -159,6 +167,12 @@ After setup, the integration creates **1 main device** and up to **4 sub-devices
 | 3 | **`<Name>: schedule`** (`schedule`) | When any scheduled module is enabled | Unified schedule card for all active modules with clear prefixes: **Blinds: open at sunrise**, **Blinds: close at sunset**, **Blinds: open on weekdays / weekends** (or single **Blinds: open at**), **Blinds: close at**, **Lighting: turn on on weekdays / weekends** (or **Lighting: turn on at**), **Lighting: turn off at**, **Watering: morning watering**, **Watering: evening watering** |
 | 4 | **`<Name>: grow light`** (`phytolamp`) | When **Enable plant lighting** is enabled | **Lighting mode** (*Automatic*, *Scheduled*, *Manual*, *Notification only*), **Use main settings** toggle, and diagnostics (**On**, **Off**, **Errors**) |
 | 5 | **`<Name>: watering`** (`watering`) | When **Enable plant watering** is enabled | **Auto watering** and **Skip next watering** switches, **Watering mode (morning / evening)**, **Zones for morning watering** and **Zones for evening watering** selectors, **Watering duration (morning / evening)**, **Delay after sunrise / before sunset**, **Air humidity scaling**, manual 30-second dosed run (**Watering zone** + **Execute** button), and diagnostics (**Active zones**, **Errors**, **Battery level**) |
+
+### Example Main Device
+
+![Main Orangery device with Sensors and Configuration sections](images/en/orry-main-device-entities.png)
+
+*Summary of enabled modules and the global low-battery threshold.*
 
 ---
 
@@ -278,11 +292,26 @@ In addition, the integration supports native Home Assistant system features:
 ## Step-by-Step Setup Guide
 
 1. **Step 1 — Select Orangery Modules**: Check one or more modules (*Enable blind control*, *Enable plant lighting*, *Enable plant watering*), toggle **Enable error logging** if desired, and (during reconfiguration) toggle **Edit previously configured functions** if you want to modify already configured modules.
+
+   ![First setup wizard screen for selecting orangery modules](images/en/orry-config-modules.png)
+
+   *Choose the modules to enable and whether to turn on error logging.*
+
 2. **Step 2 — Blind Control**: Select your blind drives and optional blind features (*Enable direct sun protection*, *Use remote control / switch*). During initial setup, configure **Travel limits**, **Schedule and sun**, and **Repeats and timings**.
+
+   ![Workweek setup screen with cycle and public-holiday options](images/en/orry-config-workweek.png)
+
+   *Set work and rest-day blocks, the first day of the cycle, and public-holiday behavior.*
+
 3. **Step 3 — Direct Sun Protection, Solar Angles, Weather & Illuminance**: Select the sun sensor, optional subset of blinds for sun protection, solar angles (`0–359°` azimuth, `0–90°` elevation), weather conditions, and illuminance sensor/thresholds.
 4. **Step 4 — Remote Control**: Select an MQTT or ZHA controller, operating mode (*Full travel*, *Fixed step*, *Proportional*), and action payloads (MQTT topic is shown only for MQTT devices).
 5. **Step 5 — Plant Lighting**: Select plant lighting switches/lights and (when blind control is enabled) whether to use main integration settings or custom plant lighting settings.
 6. **Step 6 — Plant Watering & Soil Moisture Sensors**: Select watering valves/pumps, optional soil moisture sensor support, initial schedule/presets, and per-valve moisture sensors.
+
+   ![Initial plant-watering setup screen](images/en/orry-config-watering.png)
+
+   *Choose valves or pumps, watering times, and default modes for morning and evening cycles.*
+
 7. **Step 7 — Error Logging & Notifications**: Select push notification targets and optional smart speakers / TTS engine for voice error alerts.
 
 ---
@@ -291,14 +320,27 @@ In addition, the integration supports native Home Assistant system features:
 
 ### "Orangery: drives" Card
 
+![Blinds controls, settings, and diagnostics on the Orangery drives device](images/en/orry-drives-device.png)
+
+*The device card combines manual controls, drive settings, and diagnostic counters.*
+
 1. **Grouped Cover Entities ("Blinds" and "Sun protection blinds"):**
    - **Blinds** (`cover.<orangery>_blinds`) controls all active (non-excluded) blind drives, and **Sun protection blinds** (`cover.<orangery>_sun_blinds`) controls active sun-facing drives when sun protection is enabled.
    - Expose these entities to any voice assistant (Yandex Alice, Apple Siri, Home Assistant Assist) or dashboard to control all active blinds with travel limits, retries, and travel verification.
 2. **Drive Activity (temporary drive exclusion):**
    - When closed, the dropdown displays **`All active (5)`** or **`Excluded: 1 / 5`**.
    - Open the dropdown to toggle any drive (`✓` ↔ `✕`) without reloading the integration, or select **`↺ Enable all drives`** at the top of the list to restore all drives at once.
+
+   ![Used drives dropdown for temporarily excluding drives from automation](images/en/orry-drives-selection-menu.png)
+
+   *The menu shows which drives are included in automation and which are excluded.*
+
 3. **Manual Control ("Action" + "Execute" button):**
    - Select *Stop* (default), *Open fully*, *Close fully*, or any 10% step (*Open to 10%* .. *Open to 90%*, automatically filtered by `[Down limit .. Up limit]`), then press **Execute**. The selector automatically resets to **Stop**.
+
+   ![Manual blind action dropdown with open, close, stop, and position presets](images/en/orry-drive-action-menu.png)
+
+   *Choose a stop action, an end position, or an intermediate opening percentage.*
 
 ### "Orangery: watering" Card
 

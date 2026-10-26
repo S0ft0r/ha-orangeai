@@ -169,12 +169,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             for _path, url_path, version in frontend_assets:
                 previous_version = versions.get(url_path)
                 module_url = f"{url_path}?v={version}"
+                is_icon_asset = url_path == f"/{DOMAIN}_static/{DOMAIN}-icons.js"
 
                 if storage_resource_mode:
-                    if previous_version is not None:
+                    if previous_version is not None and previous_version != version:
                         remove_extra_js_url(
                             hass, f"{url_path}?v={previous_version}"
                         )
+                    # Entity icons are used outside Lovelace too (for example, in
+                    # integration and entity panels), so register the icon pack
+                    # as a frontend-wide module as well as a dashboard resource.
+                    if is_icon_asset and previous_version != version:
+                        add_extra_js_url(hass, module_url)
                     try:
                         resource_registered = await _async_upsert_lovelace_resource(
                             hass, module_url
@@ -192,7 +198,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                             "falling back to frontend module loading for %s",
                             url_path,
                         )
-                        add_extra_js_url(hass, module_url)
+                        if not is_icon_asset or previous_version == version:
+                            add_extra_js_url(hass, module_url)
                 elif previous_version != version:
                     if previous_version is not None:
                         remove_extra_js_url(

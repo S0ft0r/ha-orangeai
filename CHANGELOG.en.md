@@ -7,6 +7,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.1.26.1] — 2026-10-26
+
+### Fixed
+- Lovelace card editor fields, options, and helpers now follow the Home Assistant frontend language.
+- The custom Orry icon set is also registered as a frontend-wide module in Storage mode while remaining a Lovelace resource.
+
+### Changed
+- Added the English interactive builder at `docs/orry-builder.en.html` and updated the English README and full-documentation links.
+- Replaced the four corresponding screenshots in the full Russian documentation without editing them; short READMEs remain screenshot-free.
+- Synchronized the integration and frontend card version to `0.1.26.1`.
+
+---
+
 ## [0.1.26] — 2026-10-25
 
 ### Fixed
