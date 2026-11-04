@@ -108,6 +108,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Загрузка интеграции и запуск менеджера."""
     manager = LoggiaManager(hass, entry)
     await manager.async_init_translations()
+    await manager.async_preload_holidays()
+    await manager.async_preload_sun_events()
     _LOGGER.info("%s", manager.tr_log("log_setup_entry", title=entry.title))
 
     hass.data.setdefault(DOMAIN, {})
@@ -150,12 +152,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                         ]
                     )
                     registered_paths.update(url for _, url in new_assets)
-                elif hasattr(hass.http, "register_static_path"):
-                    for path, url in new_assets:
-                        hass.http.register_static_path(
-                            url, str(path), cache_headers=False
-                        )
-                        registered_paths.add(url)
+                else:
+                    _LOGGER.error(
+                        "Home Assistant HTTP API does not provide "
+                        "async_register_static_paths; frontend assets for %s "
+                        "were not registered.",
+                        DOMAIN,
+                    )
                 hass.data[DOMAIN]["_frontend_registered"] = bool(registered_paths)
 
             versions: dict[str, str] = hass.data[DOMAIN].setdefault(

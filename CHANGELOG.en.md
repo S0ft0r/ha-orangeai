@@ -7,6 +7,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.1.27] — 2026-11-02
+
+### Fixed
+- Holiday-calendar generation now runs in the executor. Setup preloads the current and following years, and the cache refreshes asynchronously on year rollover; weekend checks read only the prepared cache.
+- Sunrise and sunset are calculated in the executor; today's and tomorrow's events are cached and refreshed on date or location changes, while schedule checks read only the cache.
+- Declared the `holidays` dependency in the manifest and log calendar-loading failures instead of silently falling back.
+
+### Changed
+- Removed the blocking legacy `register_static_path` call and declared Home Assistant `2026.8.0` as the minimum version in the manifest.
+- Synchronized the integration and frontend card version to `0.1.27`.
+
+---
+
 ## [0.1.26.1] — 2026-10-26
 
 ### Fixed

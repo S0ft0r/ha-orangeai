@@ -7,6 +7,7 @@ from datetime import date, datetime, time, timedelta
 
 from homeassistant.core import HomeAssistant, Event, callback
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EVENT_CORE_CONFIG_UPDATE
 from homeassistant.helpers import device_registry as dr, issue_registry as ir
 from homeassistant.helpers.event import (
     async_call_later,
@@ -21,7 +22,6 @@ from homeassistant.components.cover import (
     SERVICE_STOP_COVER,
 )
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
-from homeassistant.helpers.sun import get_astral_event_date
 from homeassistant.helpers.translation import async_get_translations
 from homeassistant.util import dt as dt_util
 
@@ -67,6 +67,118 @@ from .blind_motion import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+_HOLIDAY_CACHE_EMPTY: tuple[frozenset[date], frozenset[date]] = (
+    frozenset(),
+    frozenset(),
+)
+
+
+def _build_year_holidays(
+    country: str, year: int
+) -> tuple[frozenset[date], frozenset[date]]:
+    """Build holiday and working-weekend calendars; call only from an executor."""
+    normalized_country = country.upper()
+    holiday_dates: set[date] = set()
+    workday_weekends: set[date] = set()
+
+    try:
+        import holidays as py_holidays  # type: ignore
+    except Exception as err:
+        _LOGGER.error(
+            "Unable to import the 'holidays' dependency for %s %s: %s",
+            normalized_country,
+            year,
+            err,
+        )
+    else:
+        try:
+            calendar = py_holidays.country_holidays(normalized_country, years=[year])
+            holiday_dates.update(calendar.keys())
+        except Exception as err:
+            _LOGGER.warning(
+                "Unable to build the %s holiday calendar for %s: %s",
+                normalized_country,
+                year,
+                err,
+            )
+
+        if hasattr(py_holidays, "WORKDAY"):
+            try:
+                working_days = py_holidays.country_holidays(
+                    normalized_country,
+                    years=[year],
+                    categories=(py_holidays.WORKDAY,),
+                )
+                workday_weekends.update(working_days.keys())
+            except Exception as err:
+                _LOGGER.warning(
+                    "Working-weekend calendar is unavailable for %s %s: %s",
+                    normalized_country,
+                    year,
+                    err,
+                )
+        elif normalized_country == "RU":
+            _LOGGER.warning(
+                "The installed 'holidays' package does not expose WORKDAY; "
+                "Russian working-weekend exceptions will use the offline fallback."
+            )
+
+    if normalized_country == "RU":
+        year_prefix = f"{year}-"
+        matched_fallback_year = False
+        for iso_date in RU_HOLIDAYS_FALLBACK:
+            if iso_date.startswith(year_prefix):
+                matched_fallback_year = True
+                holiday_dates.add(date.fromisoformat(iso_date))
+        for iso_date in RU_WORKING_WEEKENDS_FALLBACK:
+            if iso_date.startswith(year_prefix):
+                workday_weekends.add(date.fromisoformat(iso_date))
+        if not matched_fallback_year and not holiday_dates:
+            holiday_dates.update(
+                date(year, month, day) for month, day in RU_FIXED_HOLIDAYS_MD
+            )
+
+    return frozenset(holiday_dates), frozenset(workday_weekends)
+
+
+def _build_sun_event_times(
+    latitude: float,
+    longitude: float,
+    elevation: float,
+    event_date: date,
+) -> tuple[datetime | None, datetime | None]:
+    """Calculate sunrise and sunset; call only from an executor."""
+    try:
+        import astral.sun
+        from astral import Observer
+    except Exception as err:
+        _LOGGER.error("Unable to import Astral for %s: %s", event_date, err)
+        return None, None
+
+    try:
+        observer = Observer(latitude, longitude, elevation)
+    except Exception as err:
+        _LOGGER.error("Unable to create Astral observer for %s: %s", event_date, err)
+        return None, None
+
+    event_times: list[datetime | None] = []
+    for event_name in ("sunrise", "sunset"):
+        try:
+            event_time = getattr(astral.sun, event_name)(observer, event_date)
+        except ValueError:
+            # Astral raises ValueError when the event does not occur at this latitude/date.
+            event_time = None
+        except Exception as err:
+            _LOGGER.warning(
+                "Unable to calculate %s for %s: %s",
+                event_name,
+                event_date,
+                err,
+            )
+            event_time = None
+        event_times.append(event_time)
+
+    return event_times[0], event_times[1]
 
 
 class LoggiaManager:
@@ -118,7 +230,21 @@ class LoggiaManager:
         self._ignore_next_options_update: bool = False
         self._selected_watering_zone: str = ACTION_STOP
         self._watering_zones_config: dict[str, dict] = self._init_watering_zones_config()
-        self._holidays_cache: dict[tuple[str, int], tuple[set[date], set[date]]] = {}
+        self._holidays_cache: dict[
+            tuple[str, int], tuple[frozenset[date], frozenset[date]]
+        ] = {}
+        self._holidays_preloaded: tuple[str, int] | None = None
+        self._holidays_preload_in_progress: tuple[str, int] | None = None
+        self._holiday_preload_task: asyncio.Task | None = None
+        self._sun_events_cache: dict[
+            tuple[date, tuple[float, float, float]],
+            tuple[datetime | None, datetime | None],
+        ] = {}
+        self._sun_events_preloaded: tuple[date, tuple[float, float, float]] | None = None
+        self._sun_events_preload_in_progress: tuple[
+            date, tuple[float, float, float]
+        ] | None = None
+        self._sun_events_preload_task: asyncio.Task | None = None
 
     def consume_ignore_options_update(self) -> bool:
         """Проверка и сброс флага пропуска перезагрузки при обновлении options из UI сущности."""
@@ -1179,18 +1305,96 @@ class LoggiaManager:
             local_dt = local_dt + timedelta(minutes=1)
         return local_dt.time().replace(second=0, microsecond=0)
 
+    def _sun_location_key(self) -> tuple[float, float, float]:
+        """Read the coordinates used to key the prepared Astral cache."""
+        config = self.hass.config
+        return (
+            float(config.latitude),
+            float(config.longitude),
+            float(config.elevation),
+        )
+
+    async def async_preload_sun_events(self, start_date: date | None = None) -> None:
+        """Preload sunrise and sunset for today and tomorrow in the executor."""
+        if start_date is None:
+            start_date = dt_util.now().date()
+
+        location = self._sun_location_key()
+        preload_key = (start_date, location)
+        event_dates = (start_date, start_date + timedelta(days=1))
+        if self._sun_events_preloaded == preload_key and all(
+            (event_date, location) in self._sun_events_cache
+            for event_date in event_dates
+        ):
+            return
+        if self._sun_events_preload_in_progress == preload_key:
+            return
+
+        self._sun_events_preload_in_progress = preload_key
+        missing_dates = [
+            event_date
+            for event_date in event_dates
+            if (event_date, location) not in self._sun_events_cache
+        ]
+        try:
+            event_times = await asyncio.gather(
+                *(
+                    self.hass.async_add_executor_job(
+                        _build_sun_event_times,
+                        location[0],
+                        location[1],
+                        location[2],
+                        event_date,
+                    )
+                    for event_date in missing_dates
+                )
+            )
+        except Exception as err:
+            _LOGGER.error(
+                "Failed to preload sunrise/sunset for %s and %s: %s",
+                start_date,
+                start_date + timedelta(days=1),
+                err,
+            )
+            return
+        finally:
+            if self._sun_events_preload_in_progress == preload_key:
+                self._sun_events_preload_in_progress = None
+
+        for event_date, times in zip(missing_dates, event_times):
+            self._sun_events_cache[(event_date, location)] = times
+
+        if self._sun_location_key() == location:
+            keep_keys = {(event_date, location) for event_date in event_dates}
+            for cache_key in tuple(self._sun_events_cache):
+                if cache_key not in keep_keys:
+                    self._sun_events_cache.pop(cache_key, None)
+            self._sun_events_preloaded = preload_key
+            self.update_next_action_text()
+        _LOGGER.debug(
+            "Preloaded sunrise/sunset for %s and %s at %s",
+            start_date,
+            start_date + timedelta(days=1),
+            location,
+        )
+
     def _get_sun_event_time(self, attr_name: str, now: datetime | None = None) -> time | None:
-        """Получить локальное время сегодняшнего рассвета (next_rising) или заката (next_setting)."""
+        """Read the cached local sunrise or sunset, falling back to sun.sun for today."""
         if now is None:
             now = dt_util.now()
-        try:
-            astral_event = "sunrise" if attr_name == "next_rising" else "sunset"
-            astral_dt = get_astral_event_date(self.hass, astral_event, now.date())
+
+        event_date = now.date()
+        location = self._sun_location_key()
+        cached_events = self._sun_events_cache.get((event_date, location))
+        if cached_events is not None:
+            event_index = 0 if attr_name == "next_rising" else 1
+            astral_dt = cached_events[event_index]
             if isinstance(astral_dt, datetime):
                 return self._ceil_to_minute(astral_dt)
-        except Exception:
-            pass
 
+        # sun.sun attributes describe today only; do not use them for a future date.
+        if event_date != dt_util.now().date():
+            return None
         sun_sensor = self.get_setting("sun_sensor", DEFAULT_SUN_SENSOR)
         sun_state = self.hass.states.get(sun_sensor)
         if not sun_state:
@@ -1358,60 +1562,67 @@ class LoggiaManager:
                 "loggia_phytolamp_delay",
             )
 
+    async def async_preload_holidays(self, year: int | None = None) -> None:
+        """Preload the current and following year's calendars in the executor."""
+        if not self.get_bool("use_holidays", DEFAULT_USE_HOLIDAYS):
+            return
+
+        target_year = dt_util.now().year if year is None else year
+        country = str(getattr(self.hass.config, "country", None) or "RU").upper()
+        preload_key = (country, target_year)
+        years = (target_year, target_year + 1)
+
+        if self._holidays_preloaded == preload_key and all(
+            (country, calendar_year) in self._holidays_cache for calendar_year in years
+        ):
+            return
+        if self._holidays_preload_in_progress == preload_key:
+            return
+
+        self._holidays_preload_in_progress = preload_key
+        missing_years = [
+            calendar_year
+            for calendar_year in years
+            if (country, calendar_year) not in self._holidays_cache
+        ]
+        try:
+            calendars = await asyncio.gather(
+                *(
+                    self.hass.async_add_executor_job(
+                        _build_year_holidays, country, calendar_year
+                    )
+                    for calendar_year in missing_years
+                )
+            )
+        except Exception as err:
+            _LOGGER.error(
+                "Failed to preload holiday calendars for %s (%s and %s): %s",
+                country,
+                target_year,
+                target_year + 1,
+                err,
+            )
+            return
+        finally:
+            self._holidays_preload_in_progress = None
+
+        for calendar_year, calendar in zip(missing_years, calendars):
+            self._holidays_cache[(country, calendar_year)] = calendar
+        self._holidays_preloaded = preload_key
+        _LOGGER.debug(
+            "Preloaded holiday calendars for %s: %s and %s",
+            country,
+            target_year,
+            target_year + 1,
+        )
+
     def _get_year_holidays(
         self, country: str, year: int
-    ) -> tuple[set[date], set[date]]:
-        """Получить множества (праздничные_выходные, рабочие_выходные) для страны и года (с кэшированием)."""
-        cache_key = (country.upper(), year)
-        if cache_key in self._holidays_cache:
-            return self._holidays_cache[cache_key]
-
-        holiday_dates: set[date] = set()
-        workday_weekends: set[date] = set()
-
-        try:
-            import holidays as py_holidays  # type: ignore
-
-            cal = py_holidays.country_holidays(country.upper(), years=[year])
-            holiday_dates.update(cal.keys())
-            if hasattr(py_holidays, "WORKDAY"):
-                try:
-                    w_cal = py_holidays.country_holidays(
-                        country.upper(),
-                        years=[year],
-                        categories=(py_holidays.WORKDAY,),
-                    )
-                    workday_weekends.update(w_cal.keys())
-                except Exception:
-                    pass
-        except Exception:
-            pass
-
-        if country.upper() == "RU":
-            prefix = f"{year}-"
-            matched_year = False
-            for iso_str in RU_HOLIDAYS_FALLBACK:
-                if iso_str.startswith(prefix):
-                    matched_year = True
-                    try:
-                        holiday_dates.add(date.fromisoformat(iso_str))
-                    except ValueError:
-                        pass
-            for iso_str in RU_WORKING_WEEKENDS_FALLBACK:
-                if iso_str.startswith(prefix):
-                    try:
-                        workday_weekends.add(date.fromisoformat(iso_str))
-                    except ValueError:
-                        pass
-            if not matched_year and not holiday_dates:
-                for m, d in RU_FIXED_HOLIDAYS_MD:
-                    try:
-                        holiday_dates.add(date(year, m, d))
-                    except ValueError:
-                        pass
-
-        self._holidays_cache[cache_key] = (holiday_dates, workday_weekends)
-        return holiday_dates, workday_weekends
+    ) -> tuple[frozenset[date], frozenset[date]]:
+        """Read a prepared holiday calendar; never build it on the event loop."""
+        return self._holidays_cache.get(
+            (country.upper(), year), _HOLIDAY_CACHE_EMPTY
+        )
 
     @property
     def split_weekend_schedule(self) -> bool:
@@ -1817,6 +2028,81 @@ class LoggiaManager:
 
     async def _setup_time_listeners(self):
         self.recalculate_schedule_flags()
+
+        @callback
+        def _check_sun_event_cache(now: datetime | None = None) -> None:
+            local_now = dt_util.as_local(now) if now is not None else dt_util.now()
+            start_date = local_now.date()
+            location = self._sun_location_key()
+            preload_key = (start_date, location)
+            event_dates = (start_date, start_date + timedelta(days=1))
+            if self._sun_events_preloaded == preload_key and all(
+                (event_date, location) in self._sun_events_cache
+                for event_date in event_dates
+            ):
+                return
+            if self._sun_events_preload_in_progress == preload_key:
+                return
+            if (
+                self._sun_events_preload_task is not None
+                and not self._sun_events_preload_task.done()
+            ):
+                self._sun_events_preload_task.cancel()
+            self._sun_events_preload_task = self.hass.async_create_task(
+                self.async_preload_sun_events(start_date)
+            )
+
+        unsub_sun_event_cache = async_track_time_change(
+            self.hass,
+            _check_sun_event_cache,
+            hour=0,
+            minute=0,
+            second=5,
+        )
+        self._unsub_listeners.append(unsub_sun_event_cache)
+
+        @callback
+        def _on_core_config_update(_event: Event) -> None:
+            self._sun_events_preloaded = None
+            if (
+                self._sun_events_preload_task is not None
+                and not self._sun_events_preload_task.done()
+            ):
+                self._sun_events_preload_task.cancel()
+            self._sun_events_preload_task = self.hass.async_create_task(
+                self.async_preload_sun_events()
+            )
+
+        unsub_core_config = self.hass.bus.async_listen(
+            EVENT_CORE_CONFIG_UPDATE, _on_core_config_update
+        )
+        self._unsub_listeners.append(unsub_core_config)
+
+        if self.get_bool("use_holidays", DEFAULT_USE_HOLIDAYS):
+            @callback
+            def _check_holiday_calendar_year(now: datetime | None = None) -> None:
+                local_now = dt_util.as_local(now) if now is not None else dt_util.now()
+                country = str(
+                    getattr(self.hass.config, "country", None) or "RU"
+                ).upper()
+                preload_key = (country, local_now.year)
+                if (
+                    self._holidays_preloaded == preload_key
+                    or self._holidays_preload_in_progress == preload_key
+                ):
+                    return
+                self._holiday_preload_task = self.hass.async_create_task(
+                    self.async_preload_holidays(local_now.year)
+                )
+
+            unsub_holiday_year = async_track_time_change(
+                self.hass,
+                _check_holiday_calendar_year,
+                hour=0,
+                minute=0,
+                second=5,
+            )
+            self._unsub_listeners.append(unsub_holiday_year)
 
         @callback
         def _check_schedule(now: datetime | None = None):
@@ -2772,6 +3058,12 @@ class LoggiaManager:
             self._verify_task.cancel()
         if self._watering_task:
             self._watering_task.cancel()
+        if self._holiday_preload_task and not self._holiday_preload_task.done():
+            self._holiday_preload_task.cancel()
+        self._holiday_preload_task = None
+        if self._sun_events_preload_task and not self._sun_events_preload_task.done():
+            self._sun_events_preload_task.cancel()
+        self._sun_events_preload_task = None
         self._cancel_all_valve_safety_timers()
         for unsub in self._unsub_listeners:
             unsub()

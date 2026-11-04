@@ -15,8 +15,11 @@
     "lovelace"
   ],
   "documentation": "https://github.com/S0ft0r/ha-orangeai",
+  "homeassistant": "2026.8.0",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/S0ft0r/ha-orangeai/issues",
-  "requirements": [],
-  "version": "0.1.26.1"
+  "requirements": [
+    "holidays"
+  ],
+  "version": "0.1.27"
 }
