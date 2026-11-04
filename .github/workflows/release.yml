@@ -1,5 +1,5 @@
 name: Release
-run-name: Auto-release after Validate — ${{ github.event.workflow_run.head_branch }}
+run-name: Auto-release ${{ github.event.workflow_run.display_title }}
 
 on:
   workflow_run:
@@ -200,14 +200,14 @@ jobs:
           print(f"Validated {current_version} is eligible for automatic release.")
           PY
 
-      - name: Wait five minutes and confirm main is still the tested commit
+      - name: Wait two minutes and confirm main is still the tested commit
         id: stability
         if: steps.candidate.outputs.release == 'true'
         env:
           TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
-          sleep 300
+          sleep 120
           git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
           MAIN_SHA="$(git rev-parse refs/remotes/origin/main)"
           if [[ "$MAIN_SHA" != "$TARGET_SHA" ]]; then
@@ -317,8 +317,66 @@ jobs:
           if [[ "$VERSION" == *-* ]]; then
             release_flags+=(--prerelease)
           fi
-          gh release create "$TAG" orry.zip \
-            --target "$TARGET_SHA" \
-            --title "Домашняя оранжерея $TAG" \
-            --notes-file release_notes.md \
-            "${release_flags[@]}"
+
+          release_has_asset() {
+            gh release view "$TAG" --json assets --jq '.assets[].name' 2>/dev/null \
+              | grep -Fxq -- "orry.zip"
+          }
+
+          max_attempts=5
+          for attempt in $(seq 1 "$max_attempts"); do
+            if gh release view "$TAG" >/dev/null 2>&1; then
+              echo "Release $TAG already exists; checking for orry.zip."
+              if release_has_asset; then
+                echo "Release asset orry.zip is already present."
+                exit 0
+              fi
+              if gh release upload "$TAG" orry.zip --clobber; then
+                echo "Uploaded orry.zip to existing release $TAG."
+                exit 0
+              else
+                status=$?
+              fi
+              if release_has_asset; then
+                echo "Asset upload completed despite the API error."
+                exit 0
+              fi
+            else
+              if gh release create "$TAG" orry.zip \
+                --target "$TARGET_SHA" \
+                --title "Домашняя оранжерея $TAG" \
+                --notes-file release_notes.md \
+                "${release_flags[@]}"; then
+                echo "Published GitHub Release $TAG with orry.zip."
+                exit 0
+              else
+                status=$?
+              fi
+
+              # A 5xx response can arrive after GitHub has already created the release.
+              if gh release view "$TAG" >/dev/null 2>&1; then
+                if release_has_asset; then
+                  echo "Release and orry.zip exist despite the create API error."
+                  exit 0
+                fi
+                if gh release upload "$TAG" orry.zip --clobber; then
+                  echo "Release exists; uploaded orry.zip after the create API error."
+                  exit 0
+                else
+                  status=$?
+                fi
+                if release_has_asset; then
+                  echo "Asset upload completed despite the API error."
+                  exit 0
+                fi
+              fi
+            fi
+
+            if [[ "$attempt" -eq "$max_attempts" ]]; then
+              echo "::error::Failed to publish $TAG after $max_attempts attempts (last exit code $status)."
+              exit "$status"
+            fi
+            delay=$((5 * (2 ** (attempt - 1))))
+            echo "::warning::GitHub Release API call failed (attempt $attempt/$max_attempts); retrying in ${delay}s."
+            sleep "$delay"
+          done
