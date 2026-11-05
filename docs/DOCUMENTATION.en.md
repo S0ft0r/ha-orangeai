@@ -1,6 +1,6 @@
 # Home Orangery — Modular Blind, Plant Lighting & Watering Controller for Home Assistant
 
-[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![Home Assistant Marketplace](https://img.shields.io/badge/Home%20Assistant-Marketplace-41BDF5.svg)](https://www.home-assistant.io/blog/2026/11/04/release-202611/#welcome-to-the-marketplace)
 [![Version](https://img.shields.io/badge/version-0.1.27-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.8.0%2B-41BDF5.svg)](https://www.home-assistant.io/)
 [![Manufacturer](https://img.shields.io/badge/manufacturer-OrangeAI-purple.svg)](https://github.com/S0ft0r/ha-orangeai)
@@ -53,30 +53,34 @@ A modular custom integration for **Home Assistant** providing comprehensive auto
 
 ## Installation
 
-### Method 1. Via HACS (Recommended)
+### Home Assistant Core 2026.11.0 and newer — built-in Marketplace (recommended)
 
-[![Open your Home Assistant instance and open the Home Orangery repository in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=S0ft0r&repository=ha-orangeai&category=integration)
+Marketplace is built into Home Assistant, so there is no need to install HACS separately. Open **Settings → Marketplace** and, the first time you visit, read and accept the notice about community projects.
 
-The badge opens the repository page in HACS. If the repository is not listed, open the HACS menu → **Custom repositories**, enter `https://github.com/S0ft0r/ha-orangeai`, choose **Integration**, and select **Add**.
+Search for **Home Orangery** or `orry`. If the integration is not listed in the main catalog, select **Add from link** and enter `https://github.com/S0ft0r/ha-orangeai`. Adding a custom repository requires GitHub device sign-in. You do not enter your GitHub password in Home Assistant.
 
-1. On the integration page in HACS, select **Download**.
-2. Restart Home Assistant.
-3. **Reload your browser with cache clearing** (`Ctrl + F5` / `Shift + F5` on Windows/Linux or `Cmd + Shift + R` on macOS), or completely restart the browser.
-   > ⚠️ **Important for custom icons (`orry:*`) and the custom card:** the integration registers its vector icon bundle (`orry-icons.js`) and `custom:orry-card` (`orry-card.js`) in the Home Assistant frontend. If you do not perform a hard refresh with cache clearing after installing or updating the integration, the browser will keep using its cached frontend shell: **empty spaces** may appear instead of icons, and the card may report that `orry-card` was not found.
-   > - **In the Home Assistant Companion mobile app:** go to *Settings → Companion App → Debugging → Reset frontend cache* (or force-close and reopen the app).
+Open the integration page and select **Install**. Marketplace installs it and opens the setup flow immediately, without restarting Home Assistant for the initial installation. Home Assistant still needs to be restarted after an integration update.
+
+### If you already installed the integration through HACS
+
+On the first start after upgrading to Home Assistant `2026.11.0`, Marketplace automatically migrates installed projects, custom repositories, and update entities. Do not install the integration again; verify that it appears under **Settings → Marketplace**. The separate HACS integration cannot be installed on Home Assistant `2026.11.0` or newer.
+
+### Home Assistant Core 2026.8.0–2026.10.x
+
+The integration remains compatible with Core `2026.8.0` and newer, but the built-in Marketplace is available only from `2026.11.0`. On Core `2026.8.0–2026.10.x`, add `https://github.com/S0ft0r/ha-orangeai` to HACS as a custom **Integration** repository, select **Download**, and restart Home Assistant. HACS cannot be installed on Core `2026.11.0` or newer.
+
+### Start setup
 
 After installation, use the official badge to start setup, or go to **Settings → Devices & Services → Add Integration** and select **Home Orangery**:
 
 [![Open your Home Assistant instance and start setting up Home Orangery](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=orry)
 
-### Method 2. Manual Installation
+### Manual installation
 
 1. Download the release archive `orry.zip` and extract its `orry` folder into `config/custom_components/`, so the resulting path is `config/custom_components/orry/`. If you downloaded the source repository archive, copy `custom_components/orry` into `config/custom_components/` instead.
 2. Restart Home Assistant.
-3. **Reload your browser with cache clearing** (`Ctrl + F5` / `Cmd + Shift + R`) or reset the frontend cache in the Home Assistant Companion app so the `orry:*` icons and `custom:orry-card` load.
-4. Use the setup badge in the installation section above, or go to **Settings → Devices & Services → Add Integration → Home Orangery**.
-
----
+3. **Hard-refresh the browser with cache clearing** (`Ctrl + F5` / `Shift + F5` on Windows/Linux or `Cmd + Shift + R` on macOS), or reset the frontend cache in the Home Assistant Companion app so the `orry:*` icons and `custom:orry-card` load.
+4. Start the setup flow using the badge above or go to **Settings → Devices & Services → Add Integration → Home Orangery**.
 
 ## Custom Lovelace Card
 

@@ -1,6 +1,6 @@
 # Домашняя оранжерея (Home Orangery) — Интеграция для Home Assistant
 
-[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![Home Assistant Marketplace](https://img.shields.io/badge/Home%20Assistant-Marketplace-41BDF5.svg)](https://www.home-assistant.io/blog/2026/11/04/release-202611/#welcome-to-the-marketplace)
 [![Version](https://img.shields.io/badge/version-0.1.27-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.8.0%2B-41BDF5.svg)](https://www.home-assistant.io/)
 [![Manufacturer](https://img.shields.io/badge/manufacturer-OrangeAI-purple.svg)](https://github.com/S0ft0r/ha-orangeai)
@@ -54,30 +54,34 @@
 
 ## Установка
 
-### Способ 1. Через HACS (рекомендуется)
+### Home Assistant Core 2026.11.0 и новее — встроенный Marketplace (рекомендуется)
 
-[![Открыть репозиторий «Домашняя оранжерея» в HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=S0ft0r&repository=ha-orangeai&category=integration)
+Marketplace встроен в Home Assistant, поэтому отдельно устанавливать HACS больше не требуется. Откройте **Настройки → Marketplace** и, если это первое открытие, прочитайте и подтвердите предупреждение о проектах сообщества.
 
-Плашка открывает страницу репозитория в HACS. Если репозиторий не появился, откройте меню HACS → **Custom repositories**, укажите `https://github.com/S0ft0r/ha-orangeai`, выберите категорию **Integration** и нажмите **Добавить (Add)**.
+Найдите **Домашняя оранжерея** или `orry`. Если интеграция не отображается в основном каталоге, выберите **Add from link** и введите URL репозитория: `https://github.com/S0ft0r/ha-orangeai`. Для добавления пользовательского репозитория Marketplace запросит подключение GitHub через подтверждение устройства. Пароль GitHub в Home Assistant вводить не нужно.
 
-1. На странице интеграции в HACS нажмите **Скачать (Download)**.
-2. Перезагрузите Home Assistant.
-3. **Обязательно перезагрузите страницу браузера с очисткой кэша** (`Ctrl + F5` / `Shift + F5` на Windows/Linux или `Cmd + Shift + R` на macOS), либо полностью перезапустите браузер.
-   > ⚠️ **Важно для отображения кастомных иконок (`orry:*`) и карточки:** интеграция регистрирует набор иконок (`orry-icons.js`) и карточку `custom:orry-card` (`orry-card.js`) в веб-интерфейсе Home Assistant. Если после установки или обновления интеграции не обновить страницу со сбросом кэша, браузер продолжит использовать старый кэш фронтенда: на месте иконок будут **пустые места**, а карточка может сообщить, что элемент `orry-card` не найден.
-   > - **В мобильном приложении Home Assistant Companion:** перейдите в *Настройки → Приложение-компаньон → Отладка → Сбросить кэш интерфейса* (или полностью закройте и заново откройте приложение).
+Откройте страницу интеграции и нажмите **Install**. Marketplace установит её и сразу откроет мастер настройки — перезапуск Home Assistant для первой установки не требуется. Установленные обновления интеграций пока требуют перезапуска Home Assistant.
 
-После установки нажмите официальную плашку, чтобы запустить мастер настройки, или откройте **Настройки → Устройства и службы → Добавить интеграцию** и выберите **Домашняя оранжерея**:
+### Если интеграция уже была установлена через HACS
+
+При первом запуске после обновления Home Assistant до `2026.11.0` Marketplace автоматически переносит установленные проекты, пользовательские репозитории и сущности обновлений. Повторно устанавливать интеграцию не нужно; проверьте её наличие в **Настройки → Marketplace**. Установить отдельный HACS в Home Assistant `2026.11.0` и новее нельзя.
+
+### Home Assistant Core 2026.8.0–2026.10.x
+
+Интеграция совместима с Core `2026.8.0` и новее, однако встроенный Marketplace доступен только начиная с `2026.11.0`. На Core `2026.8.0–2026.10.x` добавьте `https://github.com/S0ft0r/ha-orangeai` в HACS как пользовательский репозиторий категории **Integration**, нажмите **Download** и перезапустите Home Assistant. HACS нельзя установить на Core `2026.11.0` и новее.
+
+### Запуск настройки
+
+После установки нажмите официальную плашку, чтобы запустить мастер, либо откройте **Настройки → Устройства и службы → Добавить интеграцию** и выберите **Домашняя оранжерея**:
 
 [![Запустить настройку «Домашней оранжереи» в Home Assistant](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=orry)
 
-### Способ 2. Вручную
+### Ручная установка
 
 1. Скачайте архив релиза `orry.zip` и распакуйте папку `orry` в `config/custom_components/`, чтобы итоговый путь был `config/custom_components/orry/`. Если скачан исходный архив репозитория, скопируйте из него `custom_components/orry` в `config/custom_components/`.
 2. Перезагрузите Home Assistant.
-3. **Перезагрузите страницу браузера с очисткой кэша** (`Ctrl + F5` / `Cmd + Shift + R`) или сбросьте кэш интерфейса в мобильном приложении Home Assistant, чтобы загрузились иконки `orry:*` и карточка `custom:orry-card`.
-4. Нажмите плашку запуска настройки из раздела установки выше или перейдите в **Настройки → Устройства и службы → Добавить интеграцию → Домашняя оранжерея**.
-
----
+3. **Перезагрузите страницу браузера с очисткой кэша** (`Ctrl + F5` / `Shift + F5` на Windows/Linux или `Cmd + Shift + R` на macOS), либо сбросьте кэш интерфейса в приложении Home Assistant Companion, чтобы загрузились иконки `orry:*` и карточка `custom:orry-card`.
+4. Запустите мастер настройки плашкой выше или через **Настройки → Устройства и службы → Добавить интеграцию → Домашняя оранжерея**.
 
 ## Кастомная карточка Lovelace
 

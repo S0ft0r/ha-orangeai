@@ -1,6 +1,6 @@
 # Домашняя оранжерея (Home Orangery)
 
-[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![Home Assistant Marketplace](https://img.shields.io/badge/Home%20Assistant-Marketplace-41BDF5.svg)](https://www.home-assistant.io/blog/2026/11/04/release-202611/#welcome-to-the-marketplace)
 [![Version](https://img.shields.io/badge/version-0.1.27-blue.svg)](https://github.com/S0ft0r/ha-orangeai)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.8.0%2B-41BDF5.svg)](https://www.home-assistant.io/)
 [![Manufacturer](https://img.shields.io/badge/manufacturer-OrangeAI-purple.svg)](https://github.com/S0ft0r/ha-orangeai)
@@ -27,23 +27,27 @@
 
 ## Установка и настройка
 
-### Через HACS
+### Home Assistant Core 2026.11.0 и новее — встроенный Marketplace (рекомендуется)
 
-[![Открыть репозиторий «Домашняя оранжерея» в HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=S0ft0r&repository=ha-orangeai&category=integration)
+Откройте **Настройки → Marketplace**. При первом открытии примите предупреждение о проектах сообщества. Найдите **Домашняя оранжерея** или `orry`. Если интеграция пока не отображается в основном каталоге, выберите **Add from link** и укажите `https://github.com/S0ft0r/ha-orangeai`. Для добавления пользовательского репозитория Marketplace попросит подключить GitHub через подтверждение устройства; вводить пароль GitHub в Home Assistant не нужно.
 
-Плашка открывает страницу репозитория в HACS. Если репозиторий там не появился, добавьте `https://github.com/S0ft0r/ha-orangeai` через меню HACS → **Custom repositories**, выбрав категорию **Integration**. Затем откройте интеграцию в HACS, нажмите **Скачать** и перезапустите Home Assistant.
+Нажмите **Install**: Marketplace установит интеграцию и сразу откроет мастер настройки, без перезапуска Home Assistant. При обновлении установленной интеграции перезапуск пока требуется.
 
-### Добавить и настроить интеграцию
+### Если интеграция уже была установлена через HACS
+
+При первом запуске после обновления Home Assistant до `2026.11.0` существующие установки и пользовательские репозитории автоматически переносятся в Marketplace. Не устанавливайте интеграцию повторно; проверьте её в **Настройки → Marketplace**. Установить отдельный HACS в Home Assistant `2026.11.0` и новее нельзя.
+
+### Home Assistant Core 2026.8.0–2026.10.x
+
+Минимальная поддерживаемая версия интеграции — `2026.8.0`; встроенный Marketplace доступен начиная с Core `2026.11.0`. На Core `2026.8.0–2026.10.x` добавьте `https://github.com/S0ft0r/ha-orangeai` в HACS как пользовательский репозиторий категории **Integration**, скачайте интеграцию и перезапустите Home Assistant. HACS на Core `2026.11.0` и новее не устанавливается.
+
+### Настройка и ручная установка
 
 [![Запустить настройку «Домашней оранжереи» в Home Assistant](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=orry)
 
-Нажмите плашку после установки, чтобы открыть мастер настройки. Также интеграцию можно добавить через **Настройки → Устройства и службы → Добавить интеграцию → Домашняя оранжерея**.
+После установки запустите мастер настройки этой кнопкой или через **Настройки → Устройства и службы → Добавить интеграцию → Домашняя оранжерея**.
 
-### Вручную
-
-Скопируйте `custom_components/orry` в `config/custom_components/orry/` и перезапустите Home Assistant; затем запустите настройку плашкой выше или через **Настройки → Устройства и службы → Добавить интеграцию**.
-
-После установки или обновления выполните жёсткую перезагрузку страницы со сбросом кэша. Это необходимо для загрузки иконок `orry:*` и карточки.
+Для ручной установки скопируйте `custom_components/orry` в `config/custom_components/orry/` и перезапустите Home Assistant, затем запустите мастер настройки. После первой установки или обновления выполните жёсткую перезагрузку страницы со сбросом кэша, если иконки `orry:*` или карточка не отображаются.
 
 ## Lovelace-карточка
 
